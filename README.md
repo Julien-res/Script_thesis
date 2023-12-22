@@ -2,9 +2,9 @@
 ## Introduction
 ### Pep-talk
 This repository is here to share the code that I have done during my thesis and help people that want to reuse it.  <br />
-All codes available here were made during my thesis between october 2023 and octobe 2026. Some parts can be outdated as it will never be updated.
+All codes available here were made during my thesis between October 2023 and October 2026. Some parts can be outdated as it will never be updated.
 It is written with the scope that people have already read [CALCULCO differents tutorial pages](https://www-calculco.univ-littoral.fr/), and are a bit comfortable with UNIX (bash,sh), and python. <br />
-**The various parts of code are intended to be launch from .oar file. Check for path that need to be modified in .oar, .sh or .bash depending your installation.**
+**The various parts of code are intended to be launched from .oar file. Check for paths that needs to be modified in .oar, .sh or .bash depending your installation.**
 | File | Utility |
 |-----:|-----------|
 |Compress| Bash program to compress, search, etc... differents datas|
