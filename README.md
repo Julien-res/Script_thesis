@@ -68,10 +68,43 @@ To create a new anaconda environment with Polymer dependencies:
 After that, you need to copy `/polymer` and `auxdata` to python sites-packages
 ```bash
 cd polymer-v4.16.1
-conda activate polymer
 make all
 cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/polymer
 cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/auxdata
 ```
 As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
 Then store those credential in a new file named `earthdata.credential` in `Script_thesis/Polymer/` (All the work to request server for coockies, etc... is done in the .oar file.)
+
+## Acolite
+### Start-up
+
+```bash
+cd $CONDA_ENV_HOME/lib/python3.12/site-packages
+git clone --depth 1 --branch main https://github.com/acolite/acolite.git
+cd acolite
+git reset --hard e7cb944
+```
+
+## Sen2Cor
+### Start-up
+
+```bash
+cd ~
+curl -O http://step.esa.int/downloads/9.0/installers/esa-snap_all_unix_9_0_0.sh && chmod 755 esa-snap_all_unix_9_0_0.sh && bash esa-snap_all_unix_9_0_0.sh && rm esa-snap_all_unix_9_0_0.sh
+    [o, Enter]
+    [1, Enter]
+    [Enter]
+    [Enter]
+    [n, Enter]
+    [n, Enter]
+    [n, Enter]
+echo "export SNAP_HOME=/nfs/home/laboratory/username/snap" >> ~/.bashrc
+export SNAP_HOME=/nfs/home/laboratory/username/snap
+$SNAP_HOME/bin/snap --nosplash --nogui --modules --update-all
+$SNAP_HOME/bin/snap --nosplash --nogui --modules --install org.esa.snap.idepix.core org.esa.snap.idepix.probav org.esa.snap.idepix.modis org.esa.snap.idepix.spotvgt org.esa.snap.idepix.landsat8 org.esa.snap.idepix.viirs org.esa.snap.idepix.olci org.esa.snap.idepix.seawifs org.esa.snap.idepix.meris org.esa.snap.idepix.s2msi
+echo "#SNAP configuration 's3tbx'" >> ~/.snap/etc/s3tbx.properties
+echo "#Fri Mar 27 12:55:00 CET 2020" >> ~/.snap/etc/s3tbx.properties
+echo "s3tbx.reader.olci.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
+echo "s3tbx.reader.meris.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
+echo "s3tbx.reader.slstrl1b.pixelGeoCodings=true" >> ~/.snap/etc/s3tbx.properties
+```
