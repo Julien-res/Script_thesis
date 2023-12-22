@@ -1,0 +1,26 @@
+#!/bin/bash
+#OAR -l /core=32,walltime=120:00:00
+#OAR -p network_address = 'orval11'
+#OAR -n Polymer_test
+#OAR -t besteffort
+#OAR --notify mail:julien.masson@univ-littoral.fr
+#OAR -O /scratch/log/cverpoorter/S2_polymer_msi.%jobid%.out
+#OAR -E /scratch/log/cverpoorter/S2_polymer_msi.%jobid%.err
+
+cd ~
+touch .netrc
+USERNAME=$(sed '1!d' /nfs/home/log/jmasson/Script/Polymer/earthdata.credential)
+PASSWORD=$(sed '2!d' /nfs/home/log/jmasson/Script/Polymer/earthdata.credential)
+echo "machine urs.earthdata.nasa.gov login ${USERNAME}  password ${PASSWORD}" > .netrc
+chmod 0600 .netrc
+touch .urs_cookies
+wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --auth-no-challenge http://urs.earthdata.nasa.gov/
+
+cd /nfs/home/log/jmasson
+source /nfs/opt/env/env.sh
+module load conda
+conda activate polymer
+cd /nfs/home/log/jmasson/polymer-v4.16.1/
+
+PROG=/nfs/home/log/jmasson/Script/Polymer/S2_polymer_msi.bash
+$PROG "$@"

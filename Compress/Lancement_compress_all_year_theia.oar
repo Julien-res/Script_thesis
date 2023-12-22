@@ -1,0 +1,12 @@
+#!/bin/bash
+#OAR -l /core=16,walltime=200:00:00
+#OAR -p network_address = 'orval22'
+#OAR -t idempotent
+#OAR -q besteffort
+#OAR -n Compress_theia
+#OAR --notify mail:julien.masson@univ-littoral.fr
+#OAR -O /nfs/home/log/jmasson/Script/Scratch/Compress_all_year_theia.%jobid%.out
+#OAR -E /nfs/home/log/jmasson/Script/Scratch/Compress_all_year_theia.%jobid%.err
+
+PROG=/nfs/home/log/jmasson/Script/Compress_all_year_theia.bash
+$PROG "$@"

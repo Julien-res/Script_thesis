@@ -1,0 +1,4 @@
+*.credential
+*.yml
+*.err
+*.out
