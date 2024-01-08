@@ -12,6 +12,7 @@ import optparse
 import shapely
 import pip
 import shapely.wkt
+import subprocess
 try:
     __import__('pandas')
 except ImportError:
@@ -62,22 +63,23 @@ else:
     parser.add_option("-p", "--product_type", dest="product_type", action="store", type="string",
                       help="productType (str): Type of data (check EODAG doc for more info)"
                       ,default="S2_MSI_L1C")
-     parser.add_option("-c", "--credential", dest="credential", action="store", type="string",
+    parser.add_option("-c", "--credential", dest="credential", action="store", type="string",
                        help="Path to the credential for the download of selected product (.credential file)", default=None)
     (options, args) = parser.parse_args()
 
+services=options.svc.lower()
 # Setting up credential #################################################
-filename=os.path.join(options.credential,(service+'.credential'))
+filename=os.path.join(options.credential,(services+'.credential'))
 with open(filename) as file:
     lines = [line.rstrip() for line in file]
    
 # Save the PEPS configuration file. ###############################################
 
-services=options.svc.lower()+':'
+
 yaml_path=os.path.join(format(os.getcwd()), f'eodag_download_conf_{services}_.yml')
 
 setup_logging(2) #Startup logging
-yaml_content = services+f"""
+yaml_content = services+':'+f"""
     download:
         outputs_prefix: '{options.dpath}'
         extract: true
@@ -261,3 +263,5 @@ else:
             dag.download_all(offline_search_results[i:i+1],wait=1,timeout=60)
         else:
             offline_search_results[i].download(wait=1,timeout=60)
+# Reprocess what have been downloaded ##############################################################
+subprocess.call(['sh', os.path.join(PTH,f'find_{services}_data.sh')])

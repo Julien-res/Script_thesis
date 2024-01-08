@@ -65,7 +65,7 @@ else:
                       help="productType (str): Type of data (check EODAG doc for more info", default="S2_MSI_L1C")
     parser.add_option("-t", "--tile_Identifier", dest="tile", action="store", type="string",
                       help="tileIdentifier (str): Name of the tile that will be downloaded", default="48PWQ")
-     parser.add_option("-c", "--credential", dest="credential", action="store", type="string",
+    parser.add_option("-c", "--credential", dest="credential", action="store", type="string",
                        help="Path to the credential for the download of selected product (.credential file)", default=None)
     (options, args) = parser.parse_args()
     
@@ -82,33 +82,31 @@ Year=options.year.replace('\r','') # Remove linebreak because I dont know how to
 Tiles=options.tile.replace('\r','')
 
 
-# Setting up credential ###########################################################################
-filename=os.path.join(options.credential,(service+'.credential'))
+services=options.svc.lower()
+# Setting up credential #################################################
+filename=os.path.join(options.credential,(services+'.credential'))
 with open(filename) as file:
     lines = [line.rstrip() for line in file]
-        
-# Save the PEPS configuration file. ###########################################################################
+   
+# Save the PEPS configuration file. ###############################################
 
-services=options.svc.lower()+':'
-yaml_path=os.path.join(format(os.getcwd()), 'eodag_conf_{}.yml'.format(services))
+
+yaml_path=os.path.join(format(os.getcwd()), f'eodag_download_conf_{services}_.yml')
 
 setup_logging(2) #Startup logging
-if not os.path.exists(yaml_path):
-    yaml_content = services+"""
-        download:
-            outputs_prefix: '{}'
-            extract: true
-            delete_archive: true
-        auth:
-            credentials:
-                username: XXX
-                password: YYY
-    """.format(os.getcwd()).replace('XXX',lines[0]).replace('YYY',lines[1])
-    
-    with open(yaml_path, "w") as f_yml:
-        f_yml.write(yaml_content.strip())
-        
-    os.chmod(yaml_path, 0o0600)
+yaml_content = services+':'+f"""
+    download:
+        outputs_prefix: '{options.dpath}'
+        extract: true
+        delete_archive: true
+    auth:
+        credentials:
+            username: {lines[0]}
+            password: {lines[1]}
+"""
+with open(yaml_path, "w") as f_yml:
+    f_yml.write(yaml_content.strip())
+os.chmod(yaml_path, 0o0600)
 
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas

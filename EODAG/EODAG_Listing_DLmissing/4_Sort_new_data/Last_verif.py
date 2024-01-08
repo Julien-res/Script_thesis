@@ -9,8 +9,6 @@ import re
 import sys
 import glob
 import optparse
-import datetime
-import subprocess
 import shapely
 import pip
 import shapely.wkt
@@ -62,10 +60,10 @@ else:
                       help="service (str): For now, only 'peps', 'theia','landsat' and 'earth_search_gcs' is supported"
                       ,default='peps')
     parser.add_option("-p", "--product_type", dest="product_type", action="store", type="string",
-                      help="productType (str): Type of data (check EODAG doc for more info"
+                      help="productType (str): Type of data (check EODAG doc for more info)"
                       ,default="S2_MSI_L1C")
     parser.add_option("-c", "--credential", dest="credential", action="store", type="string",
-               help="Path to the credential for the download of selected product (.credential file)", default=None)
+                        help="Path to the credential for the download of selected product (.credential file)", default=None)
     (options, args) = parser.parse_args()
 
 services=options.svc.lower()
@@ -154,7 +152,6 @@ d = {'Date': Listd,'Tile': Listn}
 Alrdonl=pd.DataFrame(data=d)
 Alrdonl['Date']=pd.to_datetime(Alrdonl['Date'],format='%Y%m%d',yearfirst=True)
 
-
 df_out=Alrdonl.groupby(['Date'])['Tile'].value_counts().unstack().fillna(0).astype(int).reindex()
 df_out = df_out.groupby(pd.Grouper(freq="M"))
 df_out=df_out.sum()
@@ -163,7 +160,7 @@ df_out.to_csv(path_or_buf=os.path.join(path,f'All_data_disp_{services}_bymonth.c
 
 # Load already downloaded data #############################################
 
-Alrd=pd.read_csv(os.path.join(options.entry,(services+'.csv'))
+Alrd=pd.read_csv(os.path.join(options.entry,(services+'_aft_DLMiss.csv'))
                 ,delimiter=';',index_col=False,header=None)
 
 # Process data in order to be used to compare ################################
@@ -184,6 +181,7 @@ data={'Tile':dft.iloc[:,1],'Date':date}
 df=pd.DataFrame(data)
 
 # Output difference between online disp and already downloaded (what is in file is what need to be downloaded)
+
 df3 = pd.merge(Alrdonl, df, how='outer', indicator='Exist')
 df3 = df3[df3.Exist != 'both']
 df3 = df3[df3.Exist != 'right_only']
@@ -191,79 +189,5 @@ test4=df3
 test4=test4.drop('Exist',axis=1)
 test4=test4.reset_index(drop=True)
 
-test4.to_csv(path_or_buf=os.path.join(path,f'Missing_data_{services}_bymonth.csv')
+test4.to_csv(path_or_buf=os.path.join(path,f'Missing_data_{services}_bymonth_aft_DL.csv')
              ,sep=';',date_format='%Y%m%d',index=False)
-
-#Search in Service database ####################################
-
-if services in ('peps','theia'):
-    for i in range(0,len(test4)):
-        starts=str(test4['Date'][i]-pd.DateOffset(1))[0:10]
-        ends=str(test4['Date'][i]+pd.DateOffset(1))[0:10]
-        tileIdentifiers=test4['Tile'][i]
-        if i==0:
-            products= dag.search_all(
-                productType=options.product_type,
-                start=starts,
-                end=ends,
-                tileIdentifier=tileIdentifiers
-            )
-        else:
-            dum= dag.search_all(
-                productType=options.product_type,
-                start=starts,
-                end=ends,
-                tileIdentifier=tileIdentifiers
-            )
-            products=products+dum
-            
-elif services=='earth_search_gcs':
-    for i in range(0,len(test4)):
-        starts=str(test4['Date'][i]-pd.DateOffset(1))[0:10]
-        ends=str(test4['Date'][i]+pd.DateOffset(1))[0:10]
-        tileIdentifiers=test4['Tile'][i]
-        if i==0:
-            products= dag.search_all(
-                productType=options.product_type,
-                start=starts,
-                end=ends,
-                geom=dictt(tileIdentifiers)
-            )
-        else:
-            dum= dag.search_all(
-                productType=options.product_type,
-                start=starts,
-                end=ends,
-                geom=shapely.wkt.loads(dictt[tileIdentifiers]).centroid.wkt
-            )
-            products=products+dum
-
-online_search_results = products.filter_property(storageStatus="ONLINE")
-offline_search_results = products.filter_property(storageStatus="OFFLINE")
-
-#download to location ###########################################################################
-
-os.chdir(options.dpath)
-#Download online Product
-if len(online_search_results)<2:
-    dag.download_all(online_search_results)
-else:
-    for i in range(0,len(online_search_results),2):
-        if i<len(products):
-            dag.download_all(online_search_results[i:i+1])
-        else:
-            online_search_results[i].download()
-
-#Try to download Offline Product
-
-if len(offline_search_results)<2:
-    dag.download_all(offline_search_results,wait=1,timeout=20)
-else:
-    for i in range(0,len(offline_search_results),2):
-        if i<len(products):
-            dag.download_all(offline_search_results[i:i+1],wait=1,timeout=20)
-        else:
-            offline_search_results[i].download(wait=1,timeout=20)
-
-# Reprocess what have been downloaded ##############################################################
-subprocess.call(['sh', os.path.join(PTH,f'find_{services}_data.sh')])
