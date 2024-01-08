@@ -65,12 +65,13 @@ To create a new anaconda environment with Polymer dependencies:
   conda activate polymer
   mamba env update -f environment.yml
 ```
-After that, you need to copy `/polymer` and `auxdata` to python sites-packages
+After that, you need to copy `/polymer` and `auxdata` to python sites-packages (Modify your CONDA_ENV_HOME depending your installation)
 ```bash
+CONDA_ENV_HOME=/nfs/home/log/jmasson/.conda/envs/polymer
 cd polymer-v4.16.1
 make all
-cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/polymer
-cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/auxdata
+cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/
+cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/
 ```
 **WARNING** `Make all` use Cython to compile some part of the code in C language. Cython use Python 2 to compile. If Polymer version is <4.16.2 you need to specify it in the setup.py:
 ```python
