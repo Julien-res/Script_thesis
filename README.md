@@ -72,7 +72,7 @@ make all
 cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/polymer
 cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/auxdata
 ```
-As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
+As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](https://urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
 Then store those credential in a new file named `earthdata.credential` in `Script_thesis/Polymer/` (All the work to request server for coockies, etc... is done in the .oar file.)
 
 ## Acolite
