@@ -68,11 +68,11 @@ To create a new anaconda environment with Polymer dependencies:
 After that, you need to copy `/polymer` and `auxdata` to python sites-packages
 ```bash
 cd polymer-v4.16.1
+make all
 cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/polymer
 cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/auxdata
-make all
 ```
-**WARNING** Make all use Cython to compile some part of the code in C language. Cython use Python 2 to compile.If Polymer version is <4.16.2 you need to specify it in the setup.py:
+**WARNING** `Make all` use Cython to compile some part of the code in C language. Cython use Python 2 to compile. If Polymer version is <4.16.2 you need to specify it in the setup.py:
 ```python
 DEBUG=True
 ANNOTATE=True
@@ -91,6 +91,8 @@ else:
             'embedsignature': True,
             }
 ```
+After That, you need to call `python setup.py build_ext --inplace` in console. You can then proceed to `cp` your packages.
+
 As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](https://urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
 Then store those credential in a new file named `earthdata.credential` in `Script_thesis/Polymer/` (All the work to request server for coockies, etc... is done in the .oar file.)
 
