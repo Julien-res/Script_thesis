@@ -61,17 +61,17 @@ In order to start using polymer, we need to download Polymer from [Hygeos](https
 The file `environment.yml` can be used to install the dependencies, either in the current anaconda environment, or in a new one. <br />
 To create a new anaconda environment with Polymer dependencies:
 ```bash
-  conda create -n polymer -c conda-forge mamba
+  conda create -n polymer
   conda activate polymer
+  conda install python=3.10.13
+  conda config --add channels conda-forge
+  conda install -n polymer mamba
+  conda update -n polymer --all
+  cd polymer-v4.16.1
   mamba env update -f environment.yml
-```
-After that, you need to copy `/polymer` and `auxdata` to python sites-packages (Modify your CONDA_ENV_HOME depending your installation)
-```bash
-CONDA_ENV_HOME=/nfs/home/log/jmasson/.conda/envs/polymer
-cd polymer-v4.16.1
-make all
-cp -avr ~/polymer-v4.16.1/polymer $CONDA_ENV_HOME/lib/python3.12/site-packages/
-cp -avr ~/polymer-v4.16.1/auxdata $CONDA_ENV_HOME/lib/python3.12/site-packages/
+  mamba install h5py
+  make all
+
 ```
 **WARNING** `Make all` use Cython to compile some part of the code in C language. Cython use Python 2 to compile. If Polymer version is <4.16.2 you need to specify it in the setup.py:
 ```python
@@ -92,7 +92,7 @@ else:
             'embedsignature': True,
             }
 ```
-After That, you need to call `python setup.py build_ext --inplace` in console. You can then proceed to `cp` your packages.
+
 
 As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](https://urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
 Then store those credential in a new file named `earthdata.credential` in `Script_thesis/Polymer/` (All the work to request server for coockies, etc... is done in the .oar file.)
