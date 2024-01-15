@@ -1,5 +1,5 @@
 #!/bin/bash
-#OAR -l /core=16,walltime=500:00:00
+#OAR -l /core=12,walltime=500:00:00
 #OAR -p network_address = 'orval10'
 #OAR -t idempotent
 #OAR -q besteffort

@@ -11,6 +11,7 @@ for cddirect in ${liste[*]};do
 		for string in ${listee[*]};do
 			year=$(echo $string | cut -c 12-15)
 			month=$(echo $string | cut -c 16-17)
+			echo $string $year $month
 			mv $FILE$cddirect$SLASH$string $FILE$year$SLASH$month$SLASH
 			rmdir $FILE$cddirect
 		done

@@ -9,6 +9,9 @@ from glob import glob
 from polymer.main import run_atm_corr
 from polymer.level2_nc import Level2_NETCDF
 from polymer.level1_msi import Level1_MSI
+from polymer.ancillary import Ancillary_NASA
+
+
 ###########################################################################
 class OptionParser (optparse.OptionParser):
     '''Parse options'''
@@ -34,6 +37,9 @@ else:
     parser.add_option("-o", "--output", dest="output_file", action="store", type="string",
                       help="output (str): Path where output datas",
                       default=None)
+    parser.add_option("-a", "--ancillary", dest="ancillary_file", action="store", type="string",
+                      help="output (str): Path where ancillary datas are stored",
+                      default=None)
     parser.add_option("-f", "--format", dest="fmt", action="store", type="string",
                       help="format (str): specify the output data format (Optional)",
                       default='autodetect')
@@ -41,6 +47,9 @@ else:
                       help="year (str): Specify the year of processed datas (Optional)",
                       default='autodetect')
     (options, args) = parser.parse_args()
+
+Ancillary_NASA(directory=options.ancillary_file)
+
 ######### Define number of Threads ############
 MAXTHREADS = 1 # Threads count for downloads
 sema = threading.Semaphore(value=MAXTHREADS)

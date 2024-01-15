@@ -1,6 +1,6 @@
 #!/bin/bash
-#OAR -l /core=32,walltime=120:00:00
-#OAR -p network_address = 'orval11'
+#OAR -l /core=32,walltime=600:00:00
+#OAR -p network_address = 'orval10'
 #OAR -t idempotent
 #OAR -q besteffort
 #OAR -n Polymer_test
@@ -12,12 +12,13 @@ cd ~
 touch .netrc
 USERNAME=$(sed '1!d' /nfs/home/log/jmasson/Script/Polymer/earthdata.credential)
 PASSWORD=$(sed '2!d' /nfs/home/log/jmasson/Script/Polymer/earthdata.credential)
-echo "machine urs.earthdata.nasa.gov login ${USERNAME}  password ${PASSWORD}" > .netrc
+USERNAME=$(echo $USERNAME| cut -c 1-30)
+echo "machine urs.earthdata.nasa.gov login ${USERNAME} password ${PASSWORD}" > .netrc
 chmod 0600 .netrc
-touch .urs_cookies
-wget --load-cookies ~/.urs_cookies --save-cookies ~/.urs_cookies --keep-session-cookies --auth-no-challenge http://urs.earthdata.nasa.gov/
 
-cd /nfs/home/log/jmasson
+rm ~/.urs_cookies
+touch ~/.urs_cookies
+
 source /nfs/opt/env/env.sh
 module load conda
 conda activate polymer
