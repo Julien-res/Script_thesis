@@ -40,9 +40,6 @@ else:
     parser.add_option("-a", "--ancillary", dest="ancillary_file", action="store", type="string",
                       help="output (str): Path where ancillary datas are stored",
                       default=None)
-    parser.add_option("-f", "--format", dest="fmt", action="store", type="string",
-                      help="format (str): specify the output data format (Optional)",
-                      default='autodetect')
     (options, args) = parser.parse_args()
 
 
@@ -60,7 +57,7 @@ def polymer(imfolder,savename):
             print(f"\n Processing {savename} ...\n")
             run_atm_corr(Level1_MSI(imfolder, resolution = '20',
                                     ancillary=Ancillary_NASA(directory=options.ancillary_file)),
-                         Level2_NETCDF(savename,fmt='.nc',overwrite=True),
+                         Level2_NETCDF(savename,overwrite=True),
                          multiprocessing=-1)
             sema.release()
         print(f"\n Processing {savename} Done! ...\n")
@@ -87,8 +84,6 @@ if __name__ == '__main__':
             Output=os.path.join(os.getcwd(),'Polymer_workspace')
     else :
         os.chdir(Output)
-
-    imfolder=glob(Input+'/GRANULE/'+'L1C*')
-    folder_name = os.path.basename(imfolder)
-    savename=os.path.join(format(Output),f'/{folder_name}_polymer20m.nc')
-    Runpolymer(threads, imfolder,savename)  
+    listimfolder=glob(Input+'/GRANULE/'+'L1C*')
+    savename=f'{listimfolder[0]}_polymer20m.nc'
+    Runpolymer(threads, Input,savename)  
