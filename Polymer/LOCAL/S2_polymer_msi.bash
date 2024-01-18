@@ -1,23 +1,24 @@
 #!/bin/bash
 set -e
+
+
 base64 -d <<<"H4sIAAAAAAAAA5VPMRLAIAjbfUXWTnyIu3yExzeAVNfqnYGYGAQA5tqoMwvg9GwBR7d0FcU7rCDUuzbUG+C2BeTo2hPkk1B1gkyUJd0yluDovhza7dk5qr35TIma2yYHExcNW3KeGcpnNpZH41Rcf7jIOS7K6Qv/13oBompMtmwBAAA=" | gunzip
 # MODIFY DEPENDING YOUR INSTALLATION
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate polymer
 
-ALLD="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/All_new_data_PEPS.csv" # location of the list of file location to download (use 'find' command in UNIX)
-ALLDTMP="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/All_new_data_PEPS_tmp.csv" # At the first launch, shouldbe an exact copy of the list above
-ALRDTT="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Polymer_alr_tt.csv" # File where name out processed data will be stored
+ALLD="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX)
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
-CRD="cverpoorter@calculco.univ-littoral.fr" # account to ssh login
-DOWNLOADED="/mnt/d/DATA/Polymer/DOWNLOADED" #Where to output downloaded datas
-TREATED="/mnt/d/DATA/Polymer/TREATED" #Where to output treated datas
+CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
+DOWNLOADED="/mnt/d/DATA/Polymer/DOWNLOADED" # Where to output downloaded datas
+TREATED="/mnt/d/DATA/Polymer/TREATED" # Where to output treated datas
 ANCILLARY="/mnt/d/DATA/Polymer/ANCILLARY/METEO" # where to output Ancillaries
 PYTHON="/home/julien/anaconda3/envs/polymer/bin/python3" # Python path (type "which python" in UNIX shell)
-CCLO="/nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/New_data_Polymer_20m/" #output file on remote server
-PROGRAM="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Run_polymer.py" #Location of Run_polymer.py
+CCLO="/nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/New_data_Polymer_20m/" # Output file on remote server
+PROGRAM="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Run_polymer.py" # Location of Run_polymer.py
 #=======================================================
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
+
 
 # Verify that files are all accessible
 chmod 0777 $TREATED
@@ -26,17 +27,37 @@ chmod 0777 $DOWNLOADED
 chmod 0600 $CREDENTIAL
 chmod 0777 $PROGRAM
 chmod 0777 $ALLD
-chmod 0777 $ALLDTMP
 
 # Ensure that the program can be run multiple times without reprocessing datas that are already processed
-FIRST=$(wc -l < $ALLD)
-SECOND=$(wc -l < $ALLDTMP)
-if [ "$FIRST" -gt "$SECOND" ];then
-	echo "Replacing Data list by a newer data list from past execution..."
-	cp -f $ALLDTMP $ALLD
+
+PRCC=${ALLD%"$(basename $ALLD)"}
+PRCC+="Polymer_alr_prc.data"
+
+if test -f $PRCC;then
+	echo "Program already launched once... Welcome back, boss! Unfinished business?"
 else
-	echo "Using provided data list, no modification done since last execution..."
+	echo "First launch, Welcome!"
+	touch $PRCC
 fi
+
+FOO=${ALLD%".data"}
+FOO+=".new"
+
+if test -f "$FOO";then
+	echo "Tmp files OK"
+	FIRST=$(wc -l < $ALLD)
+	SECOND=$(wc -l < $FOO)
+	if [ "$FIRST" -gt "$SECOND" ];then
+		echo "Replacing Data list by a newer data list from past unfinished execution..."
+		cp $FOO $ALLD
+	else
+		echo "Using provided data list, no modification done since last execution..."
+	fi
+else
+	echo "Creating Tmp files in ${ALLD%"$(basename $ALLD)"}"
+	cp $ALLD $FOO
+fi
+
 
 # Start of the loop that read all line of provided data list
 while IFS= read -r DDL; do
@@ -77,14 +98,19 @@ while IFS= read -r DDL; do
 	rm -r $TREATED/$OUTPUT
 	rm -r $ANCILLARY/*
 
-	#Log processed data
-	echo ${DDL} >> $ALRDTT
-	echo -e "$(sed '1d' $ALLDTMP)\n" > $ALLDTMP
-	head -c -1 $ALLDTMP > $ALLDTMP
-	truncate -s -1 $ALLDTMP
 
-	
+	#Log processed data
+	echo ${DDL} >> $PRCC
+	touch "$FOO.tmp"
+	tail -n +2 "$FOO" > "$FOO.tmp" && mv "$FOO.tmp" "$FOO"
+
 	echo "====================================================================================="
 	echo "====================================================================================="
 done < $ALLD
+
+rm -r $FOO
+cp $PRCC $ALLD
+rm -r $PRCC
+
 base64 -d <<<"H4sIAAAAAAAAA52SQQ6EMAhF9z0Fu9HETG8zqyadg3B4+R/amtjRiahY4EGhKmJSIXIr19gkeoYTVCard9tdY5OoyglOdC/eGXUs/XGPrxtWJeAG0NtqH6a0zfVQl1U4X4GjoEMpVMy2i0asG6byCvhLoI4Mn9IMC4PIHe1VUutpBY9kKnSmnGjt644p9RKAjgwcJzKKfMTuPNBehefJM8jsX4t/BHttQoP+zc8Gpsp7OAGMjDAQzAU91IZGQsw3E+95IpOf4D9hxV/7KXuaR57t5xXTDrnCV7OAAwAA" | gunzip
+
