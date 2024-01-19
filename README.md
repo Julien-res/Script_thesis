@@ -73,38 +73,27 @@ To create a new anaconda environment with Polymer dependencies:
   make all
 
 ```
-**WARNING** `Make all` use Cython to compile some part of the code in C language. Cython use Python 2 to compile. If Polymer version is <4.16.2 you need to specify it in the setup.py:
-```python
-DEBUG=True
-ANNOTATE=True
-
-if DEBUG:
-    compiler_directives = {
-            'profile': True,
-            'embedsignature': True,
-            'language_level': "2"
-            }
-else:
-    compiler_directives = {
-            'boundscheck': False,
-            'initializedcheck': False,
-            'cdivision': True,
-            'embedsignature': True,
-            }
-```
-
 
 As peps, theia, landsat, etc... Polymer need credential to download ancillary datas. You need an account from [EARTHDATA](https://urs.earthdata.nasa.gov) as well explained [here](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)
 Then store those credential in a new file named `earthdata.credential` in `Script_thesis/Polymer/` (All the work to request server for coockies, etc... is done in the .oar file.)
+
+Now you have two choice: if you work on the server where the datas are stored (CALCULCO for eg) use my CALCULCO part of script, if you work locally with remote data, use LOCAL.
+Both need little modification at the start of the .bash or .oar to be functional (modify path depending installation).
 
 ## Acolite
 ### Start-up
 
 ```bash
-cd $CONDA_ENV_HOME/lib/python3.12/site-packages
+conda create -n acolite -c conda-forge python=3
+conda activate acolite
+conda install -n acolite mamba
+conda update -n acolite --all
+mamba install numpy matplotlib scipy gdal pyproj scikit-image pyhdf pyresample netcdf4 h5py requests pygrib  cartopy
+export CONDA_ENV_HOME=nfs/home/laboratory/username/.conda/envs
+cd $CONDA_ENV_HOME/acolite/lib/python3.12/site-packages
 git clone --depth 1 --branch main https://github.com/acolite/acolite.git
 cd acolite
-git reset --hard e7cb944
+#git reset --hard e7cb944
 ```
 
 ## Sen2Cor
