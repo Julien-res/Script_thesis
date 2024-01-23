@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
-
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate EODAG
+base64 -d <<<"H4sIAAAAAAAAA5WQMQ7AIAwDd17hsUz5UCQ+ksc3iUkFoh2aoTocC7sAGJwD8LJqwMUTlAD0BECxK+Fxv4XsWyF0WII67kp46M9sB+OXQJvf2kvxST9CO/wJ7JNK9Z9ZH/cXGDR+pPqMIbqkO0j2j9xrKRbvM99KCvoEgUkGqz2rhn/TbrczqAiwAQAA" | gunzip
 #=======================================================
 # original program was working on a remote directory. Remove if directory is REALLY local
 sudo mkdir -p /mnt/share
