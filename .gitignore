@@ -2,3 +2,4 @@
 *.yml
 *.err
 *.out
+*.pyc

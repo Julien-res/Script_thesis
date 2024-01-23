@@ -95,6 +95,8 @@ git clone --depth 1 --branch main https://github.com/acolite/acolite.git
 cd acolite
 #git reset --hard e7cb944
 ```
+Acolite also need earthdata credential. The procedure is the same as Polymer.
+
 
 ## Sen2Cor
 ### Start-up
