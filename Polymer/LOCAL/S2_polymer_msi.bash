@@ -30,15 +30,22 @@ chmod 0777 $ALLD
 
 # Ensure that the program can be run multiple times without reprocessing datas that are already processed
 
+BLUE='\033[1;34m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+WHITE='\033[47m'
+NC='\033[0m'
+
 PRCC=${ALLD%"$(basename $ALLD)"}
 PRCC+="Polymer_alr_prc.data"
 
 if test -f $PRCC;then
-	echo "Program already launched once... Welcome back, boss! Unfinished business?"
+	echo -e "${YELLOW}Program already launched once... Welcome back, boss! Unfinished business?${NC}"
 else
-	echo "First launch, Welcome!"
+	echo -e "${YELLOW}First launch, Welcome!${NC}"
 	touch $PRCC
 fi
+
 
 FOO=${ALLD%".data"}
 FOO+=".new"
@@ -48,52 +55,52 @@ if test -f "$FOO";then
 	FIRST=$(wc -l < $ALLD)
 	SECOND=$(wc -l < $FOO)
 	if [ "$FIRST" -gt "$SECOND" ];then
-		echo "Replacing Data list by a newer data list from past unfinished execution..."
+		echo -e "${YELLOW}Replacing Data list by a newer data list from past unfinished execution...${NC}"
 		cp $FOO $ALLD
 	else
-		echo "Using provided data list, no modification done since last execution..."
+		echo -e "${YELLOW}Using provided data list, no modification done since last execution...${NC}"
 	fi
 else
 	echo "Creating Tmp files in ${ALLD%"$(basename $ALLD)"}"
 	cp $ALLD $FOO
 fi
 
+echo -e "${RED}Trying to reach NASA for ancillaries ...${NC}"
+touch ~/polymer-v4.17beta2/.netrc
+USERNAME=$(sed "1!d" $CREDENTIAL/earthdata.credential)
+PASSWORD=$(sed "2!d" $CREDENTIAL/earthdata.credential)
+USERNAME=$(echo $USERNAME| cut -c 1-30)
+echo "machine urs.earthdata.nasa.gov login ${USERNAME} password ${PASSWORD}" > ~/polymer-v4.17beta2/.netrc
+chmod 0600 ~/polymer-v4.17beta2/.netrc
 
 # Start of the loop that read all line of provided data list
 while IFS= read -r DDL; do
     echo "Text read from file: $DDL"
 	BASDL=$(basename $DDL)
 
-	echo "Downloading ..."
-	echo ${BASDL}
+	echo -e "${BLUE}Downloading ...${NC}"
+	echo -e "${YELLOW} ${BASDL} ${NC}"
 
 	sshpass -f $CREDENTIAL/privateKey.credential rsync -aquzP $CRD:$DDL $DOWNLOADED
 	FILE=$(ls $DOWNLOADED/$BASDL/GRANULE/)
 	OUTPUT="${FILE}_polymer20m.nc"
 
-	echo "Trying to reach NASA for ancillaries ..."
-	touch ~/polymer-v4.17beta2/.netrc
-	USERNAME=$(sed "1!d" $CREDENTIAL/earthdata.credential)
-	PASSWORD=$(sed "2!d" $CREDENTIAL/earthdata.credential)
-	USERNAME=$(echo $USERNAME| cut -c 1-30)
-	echo "machine urs.earthdata.nasa.gov login ${USERNAME} password ${PASSWORD}" > ~/polymer-v4.17beta2/.netrc
-	chmod 0600 ~/polymer-v4.17beta2/.netrc
 	rm ~/polymer-v4.17beta2/.urs_cookies
 	touch ~/polymer-v4.17beta2/.urs_cookies
 	cd ~/polymer-v4.17beta2
 
-	echo "Starting Process..."
+	echo -e "${BLUE}Starting Process...${NC}"
 	python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARY
 	if mv $DOWNLOADED/$BASDL/GRANULE/$OUTPUT $TREATED/ ;then
-		echo "Uploading ..."
+		echo -e "${BLUE}Uploading ...${NC}"
 	else
-		echo "Error while processing data. Check connection with NASA"
+		echo -e "${RED}Error while processing data. Check connection with NASA${NC}"
 		exit 3630
 	fi
 	chmod 0777 $TREATED/$OUTPUT
 	sshpass -f $CREDENTIAL/privateKey.credential rsync -aquzP $TREATED/$OUTPUT $CRD:$CCLO --progress
 
-	echo "Removing datas from local storage"
+	echo "${BLUE}Removing datas from local storage${NC}"
 	rm -r $DOWNLOADED/$BASDL
 	rm -r $TREATED/$OUTPUT
 	rm -r $ANCILLARY/*
@@ -104,8 +111,7 @@ while IFS= read -r DDL; do
 	touch "$FOO.tmp"
 	tail -n +2 "$FOO" > "$FOO.tmp" && mv "$FOO.tmp" "$FOO"
 
-	echo "====================================================================================="
-	echo "====================================================================================="
+	echo "${WHITE}=====================================================================================${NC}"
 done < $ALLD
 
 rm -r $FOO

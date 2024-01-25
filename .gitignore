@@ -3,3 +3,9 @@
 *.err
 *.out
 *.pyc
+*.nc
+*.tmp
+*.hdf
+*.lock
+Ancillary/.netrc
+Ancillary/.urs_cookies

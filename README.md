@@ -121,3 +121,15 @@ echo "s3tbx.reader.olci.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
 echo "s3tbx.reader.meris.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
 echo "s3tbx.reader.slstrl1b.pixelGeoCodings=true" >> ~/.snap/etc/s3tbx.properties
 ```
+## Sen2Cor
+### Start-up
+
+In order to use C2RCC, we need to create a GPF graph using GPT tool of SNAP.
+```bash
+cd ~
+~/snap/bin/gpt -h
+```
+It will show information that will help you to create GPF graph (.xml). Both tutorials from SNAP can be useful too:
+https://senbox.atlassian.net/wiki/spaces/SNAP/pages/70503590/Creating+a+GPF+Graph
+https://senbox.atlassian.net/wiki/spaces/SNAP/pages/70503475/Bulk+Processing+with+GPT
+Here a GPF graph is already created for C2RCC process, but it can bu usefull to understand how to add part process.

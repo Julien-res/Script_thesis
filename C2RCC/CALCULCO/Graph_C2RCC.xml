@@ -1,0 +1,65 @@
+<graph id="Graph_C2RCC">
+  <version>1.0</version>
+  <node id="Read">
+    <operator>read</operator>
+    <sources/>
+    <parameters>
+      <file>${sourceProduct}</file>
+    </parameters>
+  </node>
+
+  <node id="Resample">
+    <operator>S2Resampling</operator>
+    <sources>
+      <sourceProduct>"Read"</sourceProduct>
+    </sources>
+    <parameters>
+      <resolution>20</resolution>
+      <upsampling>Bilinear</upsampling>
+      <downsampling>Mean</downsampling>
+      <flagDownsampling>First</flagDownsampling>
+      <resampleOnPyramidLevels>true</resampleOnPyramidLevels>
+    </parameters>
+  </node>
+  <node id="C2RCC">
+    <operator>c2rcc.msi</operator>
+    <sources>
+      <sourceProduct>"Resample"</sourceProduct>
+      <tomsomiStartProduct>${tomsomiStartProduct}</tomsomiStartProduct>
+      <tomsomiEndProduct>${tomsomiEndProduct}</tomsomiEndProduct>
+      <ncepStartProduct>${ncepStartProduct}</ncepStartProduct>
+      <ncepEndProduct>${ncepEndProduct}</ncepEndProduct>
+    </sources>
+    <parameters>
+      <validPixelExpression>B8 &gt; 0 &amp;&amp; B8 &lt; 0.1</validPixelExpression>
+      <atmosphericAuxDataPath>string</atmosphericAuxDataPath>
+      <netSet>C2RCC-Nets</netSet>
+      <outputAsRrs>true</outputAsRrs>
+      <useEcmwfAuxData>false</useEcmwfAuxData>
+      <outputRtoa>false</outputRtoa>
+      <outputRtosaGc>false</outputRtosaGc>
+      <outputRtosaGcAann>false</outputRtosaGcAann>
+      <outputRpath>false</outputRpath>
+      <outputTdown>false</outputTdown>
+      <outputTup>false</outputTup>
+      <outputAcReflectance>true</outputAcReflectance>
+      <outputRhown>true</outputRhown>
+      <outputOos>false</outputOos>
+      <outputKd>true</outputKd>
+      <outputUncertainties>true</outputUncertainties>
+    </parameters>
+  </node>
+
+  <node id="Write">
+    <operator>write</operator>
+    <sources>
+      <source>"C2RCC"</source>
+    </sources>
+    <parameters>
+      <formatName>GeoTIFF</formatName>
+      <deleteOutputOnFailure>true</deleteOutputOnFailure>
+      <writeEntireTileRows>false</writeEntireTileRows>
+      <clearCacheAfterRowWrite>false</clearCacheAfterRowWrite>
+    </parameters>
+  </node>
+</graph>

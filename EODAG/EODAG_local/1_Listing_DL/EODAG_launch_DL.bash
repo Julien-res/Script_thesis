@@ -17,6 +17,7 @@ cd /mnt/c/Travail/Script/Script_thesis/EODAG/EODAG_local/1_Listing_DL
 OUTPUT="/mnt/share/DATA/S2_PEPS_L1C/New_data"
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/EODAG/Credential"
 #=======================================================
+
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
 
 while IFS=$' \t\r\n' read -r year ;do
