@@ -32,7 +32,7 @@
     </sources>
     <parameters>
       <validPixelExpression>B8 &gt; 0 &amp;&amp; B8 &lt; 0.1</validPixelExpression>
-      <atmosphericAuxDataPath>string</atmosphericAuxDataPath>
+      <atmosphericAuxDataPath>/nfs/home/log/jmasson/Script/Ancillary</atmosphericAuxDataPath>
       <netSet>C2RCC-Nets</netSet>
       <outputAsRrs>true</outputAsRrs>
       <useEcmwfAuxData>false</useEcmwfAuxData>
