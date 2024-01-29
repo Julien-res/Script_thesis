@@ -121,7 +121,7 @@ echo "s3tbx.reader.olci.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
 echo "s3tbx.reader.meris.pixelGeoCoding=true" >> ~/.snap/etc/s3tbx.properties
 echo "s3tbx.reader.slstrl1b.pixelGeoCodings=true" >> ~/.snap/etc/s3tbx.properties
 ```
-## Sen2Cor
+## C2RCC
 ### Start-up
 
 In order to use C2RCC, we need to create a GPF graph using GPT tool of SNAP.
@@ -133,3 +133,57 @@ It will show information that will help you to create GPF graph (.xml). Both tut
 https://senbox.atlassian.net/wiki/spaces/SNAP/pages/70503590/Creating+a+GPF+Graph
 https://senbox.atlassian.net/wiki/spaces/SNAP/pages/70503475/Bulk+Processing+with+GPT
 Here a GPF graph is already created for C2RCC process, but it can bu usefull to understand how to add part process.
+
+
+## WiPE
+
+Install X-Server Windows
+
+https://sourceforge.net/projects/vcxsrv/
+Set Display forward in WSL Distro
+
+Configure Display:
+
+    If you running WSL1:
+
+export LIBGL_ALWAYS_INDIRECT=1
+export DISPLAY=localhost:0
+
+    If you running WSL2:
+
+export LIBGL_ALWAYS_INDIRECT=1
+export DISPLAY=$(awk '/nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null):0
+
+    (If you have disabled resolv.conf use this definition: https://stackoverflow.com/a/63092879/11473934)
+
+and then (install x11-apps):
+
+sudo apt update
+sudo apt install x11-apps
+
+Start XLaunch on Windows
+
+    Multiple Windows
+    Start no client
+    disable Native opengl
+    enable Disable access control
+
+Test it
+
+In wsl: enter xcalc - Calculator should open in Windows10
+If everything worked
+
+And you want to persist the settings in your wsl distro. Store them in your ~/.bashrc.
+
+sudo nano ~/.bashrc
+
+Copy the two lines (from Set Display forward in WSL Distro - Configure Display) to the end and save it.
+Add it to autostart
+
+    Run Dialog see Start XLaunch on Windows
+    Save configuration
+    Press Windows + R
+    Enter: shell:startup
+    Copy saved configuration: *.launch (Generated in step 2) to this folder (step 4)
+
+Now the XServer will be started with windows startup.
