@@ -10,7 +10,7 @@ from matplotlib import colors
 import numpy as np
 from datetime import date as datet
 import seaborn as sbs
-import pathlib
+# import pathlib
 
 mp.style.use('seaborn')
 sbs.set_style('ticks')
@@ -19,7 +19,7 @@ sbs.set_context('paper')
 List_dts=[]
 
 #%% MREN PEPS
-path=r'C:\Travail\Script\Listing\List_data\MREN'
+path=r'C:/Travail/Script/Listing/old/List_data/MREN'
 
 all_files =[]
 
@@ -51,7 +51,7 @@ for f in all_files:
 
 #%% CALCULCO PEPS
 
-path=r'C:/Travail/Script/Listing/List_data/CALCULCO'
+path=r'C:/Travail/Script/Script_thesis/Old_code/Listing/old/List_data/CALCULCO'
 
 all_files =[]
 
@@ -81,14 +81,23 @@ for f in all_files:
     locals()['CCLO__'+B]=df.set_index('Date')
     List_dts.append('CCLO__'+B)
 #%% Sort data and plot
+
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+    return new_cmap
+
+
 for f in List_dts:
     locals()[f+'_out']=locals()[f].groupby(['Date'])['Tile'].value_counts().unstack().fillna(0).astype(int).reindex()
     locals()[f+'_out'] = locals()[f+'_out'].groupby(pd.Grouper(freq="M"))
     locals()[f+'_out']=locals()[f+'_out'].sum()
     
     # Plot grid with data
-    cmap = colors.ListedColormap(['indianred', 'bisque','yellowgreen','cornflowerblue','plum'])
-    bounds = [0,1,5,10,15,20]
+    cmap = colors.ListedColormap(['black','indianred', 'bisque','yellowgreen','lightsteelblue','cornflowerblue','plum'])
+    # cmap = mp.colormaps['inferno'].resampled(7)
+    bounds = [0,1,2,5,10,15,20]
     norm = colors.BoundaryNorm(bounds, cmap.N)
 
     fig, ax = plt.subplots(figsize=(60,13))
@@ -126,12 +135,12 @@ for f in List_dts:
     ax.set_xticks(np.arange(0,locals()[f+'_out'].shape[0], 3), minor=True);
     
     cb = fig.colorbar(cset1,ax=ax,fraction=0.046, pad=0.04)
-    cb.ax.set_yticks(bounds,['0','1','5','10','15','20+'])
+    cb.ax.set_yticks(bounds,['0','1','2','5','10','15','20+'])
     cb.ax.tick_params(labelsize=20)
     ax.set_title(f.replace('_',' '), fontdict={'fontsize': 20, 'fontweight': 'medium'})
     
     fig.tight_layout()
-    os.chdir('C:/Travail/Script/Listing/List_data/IMG/')
+    os.chdir('C:/Travail/Script/Script_thesis/Old_code/Listing/old/List_data/IMG/')
     # plt.show()
     plt.savefig(os.path.join(os.getcwd(),'{}.png'.format(f)),dpi=300,format='png')
     
