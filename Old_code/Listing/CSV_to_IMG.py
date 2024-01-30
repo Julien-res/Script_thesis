@@ -19,7 +19,7 @@ sbs.set_context('paper')
 List_dts=[]
 
 #%% MREN PEPS
-path=r'C:/Travail/Script/Listing/old/List_data/MREN'
+path=r'C:/Travail/Script/Script_thesis/Old_code/Listing/old/List_data/MREN'
 
 all_files =[]
 
