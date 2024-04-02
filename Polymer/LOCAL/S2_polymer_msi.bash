@@ -13,6 +13,7 @@ CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
 DOWNLOADED="/mnt/d/DATA/Polymer/DOWNLOADED" # Where to output downloaded datas
 TREATED="/mnt/d/DATA/Polymer/TREATED" # Where to output treated datas
 ANCILLARY="/mnt/d/DATA/Polymer/ANCILLARY/METEO" # where to output Ancillaries
+ANCILLARD="/mnt/c/Travail/Script/Script_thesis/Ancillary/ANCILLARY/METEO" # Location of Ancillary data if already downloaded DB
 PYTHON="/home/julien/anaconda3/envs/polymer/bin/python3" # Python path (type "which python" in UNIX shell)
 CCLO="/nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/New_data_Polymer_20m/" # Output file on remote server
 PROGRAM="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Run_polymer.py" # Location of Run_polymer.py
@@ -23,10 +24,15 @@ PROGRAM="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Run_polymer.py" # Loc
 # Verify that files are all accessible
 chmod 0777 $TREATED
 chmod 0777 $ANCILLARY
+
+if [ -d "$ANCILLARD" ]; then
+	chmod 0777 $ANCILLARD
+fi
 chmod 0777 $DOWNLOADED
 chmod 0600 $CREDENTIAL
 chmod 0777 $PROGRAM
 chmod 0777 $ALLD
+
 
 # Ensure that the program can be run multiple times without reprocessing datas that are already processed
 
@@ -90,28 +96,39 @@ while IFS= read -r DDL; do
 	cd ~/polymer-v4.17beta2
 
 	echo -e "${BLUE}Starting Process...${NC}"
-	python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARY
+
+	if [ -d "$ANCILLARD" ]; then
+		python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARD
+		echo -e "${YELLOW}Ancillary already downloaded, process done!${NC}"
+	else
+		python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARY
+	fi
+
 	if mv $DOWNLOADED/$BASDL/GRANULE/$OUTPUT $TREATED/ ;then
 		echo -e "${BLUE}Uploading ...${NC}"
 	else
-		echo -e "${RED}Error while processing data. Check connection with NASA${NC}"
+		echo -e "${RED}Error while processing data. Check connection with NASA or ancillaries database${NC}"
 		exit 3630
 	fi
 	chmod 0777 $TREATED/$OUTPUT
 	sshpass -f $CREDENTIAL/privateKey.credential rsync -aquzP $TREATED/$OUTPUT $CRD:$CCLO --progress
 
-	echo "${BLUE}Removing datas from local storage${NC}"
+	echo -e "${BLUE}Removing datas from local storage${NC}"
 	rm -r $DOWNLOADED/$BASDL
 	rm -r $TREATED/$OUTPUT
-	rm -r $ANCILLARY/*
-
+	
+	if [ -d "$ANCILLARD" ]; then
+		echo -e "${YELLOW}Ancillary ok!${NC}"
+	else
+		rm -r $ANCILLARY/*
+	fi
 
 	#Log processed data
 	echo ${DDL} >> $PRCC
 	touch "$FOO.tmp"
 	tail -n +2 "$FOO" > "$FOO.tmp" && mv "$FOO.tmp" "$FOO"
 
-	echo "${WHITE}=====================================================================================${NC}"
+	echo -e "${WHITE}=====================================================================================${NC}"
 done < $ALLD
 
 rm -r $FOO

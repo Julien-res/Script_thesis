@@ -257,13 +257,13 @@ else:
 #Try to download Offline Product
 
 if len(offline_search_results)<2:
-    dag.download_all(offline_search_results,wait=1,timeout=20)
+    dag.download_all(offline_search_results,wait=2,timeout=30)
 else:
     for i in range(0,len(offline_search_results),2):
         if i<len(products):
-            dag.download_all(offline_search_results[i:i+1],wait=1,timeout=20)
+            dag.download_all(offline_search_results[i:i+1],wait=2,timeout=30)
         else:
-            offline_search_results[i].download(wait=1,timeout=20)
+            offline_search_results[i].download(wait=2,timeout=30)
 
 # Reprocess what have been downloaded ##############################################################
 subprocess.call(['sh', os.path.join(PTH,f'find_{services}_data.sh')])
