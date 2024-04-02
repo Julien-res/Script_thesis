@@ -17,10 +17,14 @@ Path_new='/mnt/c/Travail/TEST/Test_WiPE/2017/NEW/'
 Path_old='/mnt/c/Travail/TEST/Test_WiPE/2017/OLD/'
 #========================
 puv_old,pvv_old,puv_new,pvv_new=retrieve_filename(Path_old,Path_new)
-match=re.search(r'\d{4}')
+
+
 
 a=0
 for i in puv_old:
+    match = re.search(r'\d{4}-\d{2}-\d{2}', i)
+    match = re.search(r'03*\d{4}', i)
+    date = datetime.strptime(match.group(), '%Y-%m-%d').date()
     data = rxr.open_rasterio(i)
     datadf = data[0].to_pandas()
     if a==0:
