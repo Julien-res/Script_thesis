@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 shopt -s globstar
 base64 -d <<<"H4sIAAAAAAAAA3WOwQ2AUAhD73+KHvXEQiZdpMNLi19PlpAGeBAAkHjFLmhhjFjdvToeFQ6e2bk0jEwMUs4OCmJjsR6GMFJwlgdZrpg28d0IIbdy4/kjyNzoAcUh5lNt4l/rBjwToz/uAAAA" | gunzip

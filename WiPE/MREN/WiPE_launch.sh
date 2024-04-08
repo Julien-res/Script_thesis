@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 shopt -s globstar
-
 base64 -d <<<"H4sIAAAAAAAAA3WOwQ2AUAhD73+KHvXEQiZdpMNLi19PlpAGeBAAkHjFLmhhjFjdvToeFQ6e2bk0jEwMUs4OCmJjsR6GMFJwlgdZrpg28d0IIbdy4/kjyNzoAcUh5lNt4l/rBjwToz/uAAAA" | gunzip
-# MODIFY DEPENDING YOUR INSTALLATION
 
-ALLD="/work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX)
+# MODIFY DEPENDING YOUR INSTALLATION
+ALLD="/work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX) (required to be a text format with .data at the end of name)
+#eg : in an interactive console, launch this command before this bash : "find /nfs/data/path -name 'S2A_*.SAFE' -o -name 'S2B_*.SAFE' > /nfs/data/path/All_new_data_PEPS.data" to create the specific list
 CREDENTIAL="/work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
 CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
 DOWNLOADED="/work/users/cverpoorter/VolTransMESKONG/Code/wipesen/DOWNLOADED" # Where to output downloaded datas
@@ -99,3 +99,4 @@ rm -r $PRCC
 
 base64 -d <<<"H4sIAAAAAAAAA52SQQ6EMAhF9z0Fu9HETG8zqyadg3B4+R/amtjRiahY4EGhKmJSIXIr19gkeoYTVCard9tdY5OoyglOdC/eGXUs/XGPrxtWJeAG0NtqH6a0zfVQl1U4X4GjoEMpVMy2i0asG6byCvhLoI4Mn9IMC4PIHe1VUutpBY9kKnSmnGjt644p9RKAjgwcJzKKfMTuPNBehefJM8jsX4t/BHttQoP+zc8Gpsp7OAGMjDAQzAU91IZGQsw3E+95IpOf4D9hxV/7KXuaR57t5xXTDrnCV7OAAwAA" | gunzip
 
+echo "started at: $(date)" > /work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/log.txt; bash /work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/WiPE_launch.sh; echo "ended at: $(date)" >> /work/users/cverpoorter/VolTransMESKONG/Code/wipesen/Script/log.txt
