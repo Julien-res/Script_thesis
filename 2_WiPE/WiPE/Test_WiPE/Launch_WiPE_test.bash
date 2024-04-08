@@ -6,7 +6,7 @@ base64 -d <<<"H4sIAAAAAAAAA3WOwQ2AUAhD73+KHvXEQiZdpMNLi19PlpAGeBAAkHjFLmhhjFjdvT
 
 # MODIFY DEPENDING YOUR INSTALLATION
 #=======================================================
-ALLD="/mnt/c/Travail/TEST/Test_WiPE/2017/Datatotread.data" # Location of the list of file location (use 'find' command in UNIX) (required to be a text format with .data at the end of name)
+ALLD="/mnt/d/TEST/Test_WiPE/2017/Datatotread.data" # Location of the list of file location (use 'find' command in UNIX) (required to be a text format with .data at the end of name)
 #eg : in an interactive console, launch this command before this bash : "find /nfs/data/path -name 'S2A_*.SAFE' -o -name 'S2B_*.SAFE' > /nfs/data/path/Datatotread.data" to create the specific list
 PROGRAM="/mnt/c/Travail/Script/WiPE/wipesen_2024_03/" # Location of wipesen program
 TREATED="/mnt/c/Travail/TEST/Test_WiPE/2017/NEW/" # Where to output treated datas

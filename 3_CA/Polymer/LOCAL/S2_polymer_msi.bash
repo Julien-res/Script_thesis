@@ -7,16 +7,16 @@ base64 -d <<<"H4sIAAAAAAAAA5VPMRLAIAjbfUXWTnyIu3yExzeAVNfqnYGYGAQA5tqoMwvg9GwBR7
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate polymer
 
-ALLD="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX)
-CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
+ALLD="/mnt/c/Travail/Script/Script_thesis/3_CA/Polymer/LOCAL/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX)
+CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/3_CA/Polymer/LOCAL/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
 CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
 DOWNLOADED="/mnt/d/DATA/Polymer/DOWNLOADED" # Where to output downloaded datas
 TREATED="/mnt/d/DATA/Polymer/TREATED" # Where to output treated datas
 ANCILLARY="/mnt/d/DATA/Polymer/ANCILLARY/METEO" # where to output Ancillaries
-ANCILLARD="/mnt/c/Travail/Script/Script_thesis/Ancillary/ANCILLARY/METEO" # Location of Ancillary data if already downloaded DB
+ANCILLARD="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary/ANCILLARY/METEO" # Location of Ancillary data if already downloaded DB
 PYTHON="/home/julien/anaconda3/envs/polymer/bin/python3" # Python path (type "which python" in UNIX shell)
 CCLO="/nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/New_data_Polymer_20m/" # Output file on remote server
-PROGRAM="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/Run_polymer.py" # Location of Run_polymer.py
+PROGRAM="/mnt/c/Travail/Script/Script_thesis/3_CA/Polymer/LOCAL/Run_polymer.py" # Location of Run_polymer.py
 #=======================================================
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
 
