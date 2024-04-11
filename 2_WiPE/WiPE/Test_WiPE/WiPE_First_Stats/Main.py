@@ -3,25 +3,23 @@
 Created on Thu Mar 28 09:45:04 2024
 @author: Julien Masson
 """
-
 import os
 import re
-import rioxarray as rxr
-import pandas as pd
-import numpy
-from osgeo import gdal, ogr
-os.chdir('/mnt/c/Travail/Script/Script_thesis/WiPE/Test_WiPE/WiPE_First_Stats')
-from retrieve_filename import retrieve_filename
 import numpy
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib import cm
 import matplotlib.ticker as ticker
+import rioxarray as rxr
+from osgeo import gdal
+os.chdir('/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE/Test_WiPE/WiPE_First_Stats')
+from retrieve_filename import retrieve_filename
+
 #=======================
-Path_new='/mnt/c/Travail/TEST/Test_WiPE/2017/NEW/'
-Path_old='/mnt/c/Travail/TEST/Test_WiPE/2017/OLD/'
+PATH_N='/mnt/d/TEST/Test_WiPE/2017/NEW/'
+PATH_O='/mnt/d/TEST/Test_WiPE/2017/OLD/'
 #========================
-puv_old,pvv_old,puv_new,pvv_new=retrieve_filename(Path_old,Path_new)
+puv_old,pvv_old,puv_new,pvv_new=retrieve_filename(PATH_O,PATH_N)
 
 a=0
 for i in puv_new:
@@ -32,14 +30,14 @@ for i in puv_new:
         ys, xs = data.shape
         ulx, xres, _, uly, _, yres = ds.GetGeoTransform()
         extent = [ulx, ulx+xres*xs, uly, uly+yres*ys] # Generate X and Y limits of the image
-        ds = None
+        del ds
     else:
         ds = gdal.Open(i)
         data_1 = ds.ReadAsArray()
         data_1=data_1.astype('int')
-        ds = None
+        del ds
         data=numpy.add(data,data_1)
-        data_1=None
+        del data_1
 
     #Find the old WiPE mask matching the date of the new one
     match=re.findall(r'\d+',i)
@@ -49,14 +47,14 @@ for i in puv_new:
         ds = gdal.Open(old_o)
         data_o = ds.ReadAsArray()
         data_o=data_o.astype('int')
-        ds = None
+        del ds
     else:
         ds = gdal.Open(old_o)
         data_o1 = ds.ReadAsArray()
         data_o1=data_o1.astype('int')
-        ds = None
+        del ds
         data_o=numpy.add(data_o,data_o1)
-        data_o1=None
+        del data_o1
     a=a+1
 
 extent=list(map(int, extent))
@@ -171,11 +169,11 @@ newcmp = ListedColormap(newcolors)
 
 fig, ax = plt.subplots()
 heatmap=ax.imshow(difference,cmap=newcmp,vmin=-Percent,vmax=Percent)
-plt.title('Difference of data retrieval in percent (2017)')
+plt.title('Difference of data retrieval in number of pixel (2017)')
 #==Colorbar
 cbar=plt.colorbar(heatmap)
 cbar.ax.set_yticks([-Percent,0,Percent])
-cbar.set_label('Percent of data retrieval', rotation=270)
+cbar.set_label('Number of pixel', rotation=270)
 
 #==Ticks (X,Y)
 start, end = ax.get_xlim()
