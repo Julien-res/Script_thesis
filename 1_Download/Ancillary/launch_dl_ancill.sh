@@ -4,11 +4,11 @@ source ~/anaconda3/etc/profile.d/conda.sh
 conda activate polymer
 
 
-ANCILLARY="/mnt/c/Travail/Script/Script_thesis/Ancillary/ANCILLARY/" # where to output Ancillaries
-CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/Polymer/LOCAL/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
-ALLD="/mnt/c/Travail/Script/Script_thesis/Ancillary/xml_list.data" #Path of the .xml list
-TMP="/mnt/c/Travail/Script/Script_thesis/Ancillary/TMP"  # Where to output downloaded datas
-MAINPY="/mnt/c/Travail/Script/Script_thesis/Ancillary"
+ANCILLARY="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary/ANCILLARY/" # where to output Ancillaries
+CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/3_CA/Polymer/LOCAL/credential" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
+ALLD="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary/xml_list.data" #Path of the .xml list
+TMP="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary/TMP"  # Where to output downloaded datas
+MAINPY="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary"
 CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
 cd $MAINPY
 #=======================================================

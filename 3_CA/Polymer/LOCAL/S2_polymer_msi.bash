@@ -17,6 +17,7 @@ ANCILLARD="/mnt/c/Travail/Script/Script_thesis/1_Download/Ancillary/ANCILLARY/ME
 PYTHON="/home/julien/anaconda3/envs/polymer/bin/python3" # Python path (type "which python" in UNIX shell)
 CCLO="/nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/New_data_Polymer_20m/" # Output file on remote server
 PROGRAM="/mnt/c/Travail/Script/Script_thesis/3_CA/Polymer/LOCAL/Run_polymer.py" # Location of Run_polymer.py
+RESOLUTION=20 #Resolution required for output (10 20 or 60m)
 #=======================================================
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
 
@@ -101,7 +102,7 @@ while IFS= read -r DDL; do
 		python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARD
 		echo -e "${YELLOW}Ancillary already downloaded, process done!${NC}"
 	else
-		python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARY
+		python3 $PROGRAM -i $DOWNLOADED/$BASDL -o $TREATED/ -a $ANCILLARY -r $RESOLUTION
 	fi
 
 	if mv $DOWNLOADED/$BASDL/GRANULE/$OUTPUT $TREATED/ ;then

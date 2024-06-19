@@ -2,12 +2,16 @@
 """
 Created on Thu Apr 09 09:00:04 2024
 @author: Julien Masson
+
+Verify if WiPE retrieve more pixel than POLYMER
 """
+import os
 import re
 import numpy as np
 import xarray as xr
 import rioxarray
 import matplotlib.pyplot as plt
+from matplotlib import colors
 import pyproj
 import retrieve_filename
 import rasterio
@@ -48,12 +52,14 @@ ITER = 1
 for image in list_img:
     with xr.open_dataset(image,decode_coords="all",drop_variables=DROP) as ds: #Open POLYMER img
         AA = P(ds.longitude.data,ds.latitude.data) # Reproject to UTM
+        Coordx=np.unique(np.round(AA[0]))
+        Coordy=np.unique(np.round(AA[1]))
         da = xr.DataArray(
             data = np.vectorize(zerooone)(ds[KEEP].data),
             dims = ["x","y"],
             coords = dict(
-                    x = (["x"], np.unique(np.round(AA[0]))),
-                    y = (["y"], np.unique(np.round(AA[1])))
+                    x = (["x"], Coordx),
+                    y = (["y"], Coordy)
             )
         )
     del ds
@@ -81,13 +87,30 @@ for image in list_img:
         resultw=resultw+WData
         difference=difference+(WData-da)
     ITER=ITER+1
-#open corresponding WiPE
-#Reinterpolation de WiPE
-#Comparaison pixel
-
 
 # plots?  ===========================
-fig, ax = plt.subplots()
+divnorm=colors.TwoSlopeNorm(vmin=-40, vcenter=0, vmax=15)
 
-heatmap=ax.imshow(resultp,cmap='ocean',vmin=0)
+fig, ax = plt.subplots()
+heatmap=ax.imshow(difference,cmap='seismic',norm=divnorm)
+plt.title('Difference in data retrieval between WiPE and POLYMER (2017)')
+#==Colorbar
 cbar=plt.colorbar(heatmap)
+cbar.set_label('Number of pixel', rotation=270)
+
+#==Ticks (X,Y)
+start, end = ax.get_xlim()
+start=int(start)
+end=int(end)
+ax.set_xticks(np.linspace(start=start,stop=end,num=3))
+ax.set_xticklabels(np.linspace(start=Coordx[0],stop=Coordx[-1],num=3)
+                    ,minor=False)
+
+start, end = ax.get_ylim()
+start=int(start)
+end=int(end)
+ax.set_yticks(np.linspace(start=start,stop=end,num=3))
+ax.set_yticklabels(np.linspace(start=Coordy[0],stop=Coordy[-1],num=3)
+                    ,minor=False,rotation=30)
+plt.tight_layout()
+plt.savefig(fname=os.path.join(os.getcwd(),'Difference.png'),format='png',dpi=600)

@@ -4,7 +4,6 @@ import re
 import os
 import sys
 import optparse
-import threading
 from glob import glob
 from polymer.main import run_atm_corr
 from polymer.level2_nc import Level2_NETCDF
@@ -47,31 +46,16 @@ else:
 
 
 ######### Define number of Threads ############
-MAXTHREADS = 1 # Threads count for downloads
-sema = threading.Semaphore(value=MAXTHREADS)
-threads = []
+
 
 def polymer(imfolder,savename):
-    sema.acquire()
-    try:
-        if os.path.isfile(savename):
-            sema.release()
-        else:  
-            print(f"\n Processing {savename} ...\n")
-            run_atm_corr(Level1_MSI(imfolder, resolution = options.reso,
-                                    ancillary=Ancillary_NASA(directory=options.ancillary_file)),
-                         Level2_NETCDF(savename,overwrite=True),
-                         multiprocessing=-1)
-            sema.release()
-        print(f"\n Processing {savename} Done! ...\n")
-    except ValueError:
-        raise("\n Multithreading error! ...\n")
-        Runpolymer(threads, imfolder,savename)
+    print(f"\n Processing {savename} ...\n")
+    run_atm_corr(Level1_MSI(imfolder, resolution = options.reso,
+        ancillary=Ancillary_NASA(directory=options.ancillary_file)),
+        Level2_NETCDF(savename,overwrite=True),multiprocessing=-1)
 
-def Runpolymer(threads, imfolder,savename):
-    thread = threading.Thread(target=polymer, args=(imfolder,savename,))
-    threads.append(thread)
-    thread.start()
+    print(f"\n Processing {savename} Done! ...\n")
+
 ######### Run Polymer correction ############
 if __name__ == '__main__':
     
@@ -88,5 +72,5 @@ if __name__ == '__main__':
     else :
         os.chdir(Output)
     listimfolder=glob(Input+'/GRANULE/'+'L1C*')
-    savename=os.path.join(Output,(listimfolder[0]+'_polymer'+options.reso+'m.nc'))
-    Runpolymer(threads, Input,savename)  
+    savename=os.path.join(Output,(listimfolder[0]'_polymer'+options.reso+'m.nc'))
+    polymer(Input,savename)  

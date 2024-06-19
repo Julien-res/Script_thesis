@@ -10,3 +10,7 @@
 Ancillary/.netrc
 Ancillary/.urs_cookies
 *.rar
+*.gml
+*.jp2
+/3_CA/WiPE_before_or_after/Sunglint_retrieval_test/Data
+*.png
