@@ -74,7 +74,7 @@ while IFS= read -r DDL; do
 	cd $PROGRAM
 	./wipesen -f $DOWNLOADED/$BASDL/GRANULE/$FILE/MTD_TL.xml
 
-	if mv $DOWNLOADED/$BASDL/GRANULE/$FILE/IMG_DATA/*.TIF $TREATED/ ;then
+	if mv $DOWNLOADED/$BASDL/GRANULE/$FILE/IMG_DATA/*water.TIF $TREATED/ ;then
 		echo -e "${BLUE}Moving datas to TREATED files ...${NC}"
 	else
 		echo -e "${RED}Error while processing data.${NC}"
