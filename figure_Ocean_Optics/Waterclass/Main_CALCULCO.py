@@ -55,13 +55,10 @@ def polymer_zero(x):
 
 def bitmaskp(x):
     if x in [1,2,4,8,16,32,64,128,512]:
-        r=0
+        r=False
     else:
-        r=x
+        r=True
     return r
-
-
-
 
 def list_files(directory_path,pattern):
     files_list = [str(file) for file in Path(directory_path).rglob(pattern)]
@@ -91,14 +88,11 @@ BANDS = meta.SENSOR_BANDS['MSI-SOLID']
 # =============================================================================
 
 WET=[]
-WETPERC=[]
 WETNUM=0
 DRY=[]
-DRYPERC=[]
 DRYNUM=0
-for name in TILENAME:
+for name in TILENAME: # For all listed TILENAME
     WDATA={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
-    WDATAPERC={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
     monthdic={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
     monthdicW={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
     occurence={}
@@ -117,9 +111,9 @@ for name in TILENAME:
             del monthdic[Path(path).name[23:25]][-1]
     data={}
     convert=['lat','lon','Rrs443','Rrs490','Rrs560','Rrs665','Rrs705']
-    for a in monthdic :
+    for a in monthdic : #For all month
         t=0
-        for i in monthdic[a] :
+        for i in monthdic[a] : # For all images in those month
             print (i)
             ds=gdal.Open(i,gdal.GA_ReadOnly)
             with rasterio.open(monthdicW[a][t]) as dsw: # Open WiPE img and resample it to 20m
@@ -131,20 +125,25 @@ for name in TILENAME:
                     ),
                     resampling=Resampling.nearest
                 )
+            # Mask ==================
             dww=np.squeeze(dww.astype(int)) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
-            dww=np.vectorize(zerooone)(dww)
-            DATA = []
+            dww=np.vectorize(zerooone)(dww) #Convert to mask True or False to apply
             bitmask = gdal.Open(ds.GetSubDatasets()[3][0], gdal.GA_ReadOnly) #Polymer open
+            bitmask = np.vectorize(bitmaskp)(bitmask)
+            bitmask = np.where(dww,bitmask,0) #Fusion bitmask and WiPE to save compute time
+            dww=None
+            DATA = []
             for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
                 band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
                 dw = band_ds.ReadAsArray()
                 dw = dw/np.pi #Convert Rw to Rrs
-                dw = np.where(dww,dw,0) #Apply WiPE mask
-                dw = np.vectorize(bitmaskp)(dw) #Apply Polymer bitmask
-                dw = dw.flatten() #.T
-                DATA.append(dw)
+                dw = np.where(bitmask,dw,0) #Apply Polymer and WiPE bitmask
+                dw = dw.flatten() #.T # create vector from array
+                DATA.append(dw) # create the 5 vector array to process
+            dww=None
+            bitmask=None
             if t == 0:
-                WDATA[a] = np.array(DATA).T
+                WDATA[a] = np.array(DATA).T # convert as array and transpose
             else:
                 WDATA[a] = WDATA[a] + np.array(DATA).T
             DATA=None
@@ -165,11 +164,9 @@ for name in TILENAME:
                 WET[a] = WET[a] + WDATA[a]
                 WETNUM += t
         occurence[a] = t
-
         Class = Chl_CONNECT(WDATA[a]/t,sensor='MSI').Class
         WDATA[a] = np.reshape(Class, (-1, 5490))
         Class = None
-
         print ('Processing '+i+' month')
         if type(WDATA[a])==type(np.empty(0)):
             [rows, cols] = dw.shape
