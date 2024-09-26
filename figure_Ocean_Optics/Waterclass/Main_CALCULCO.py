@@ -5,8 +5,8 @@ Created on Mon Sep 23 14:49:11 2024
 @author: Julien Masson
 
 """
-
-WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
+# WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
 import pandas as pd
 import os
 import sys
@@ -20,21 +20,29 @@ from common.Chl_CONNECT import Chl_CONNECT
 from osgeo import gdal
 import optparse
 from pathlib import Path
+import rasterio
+from rasterio.enums import Resampling
 # =============================================================================
 # Variables
 # =============================================================================
 
 # INPUT = 
 # WIPE_INPUT = 
-PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
-INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+
+# PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
+# INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+PATH='/mnt/d/DATA/WiPE_degrade_test'
+INPUT='/mnt/d/DATA/WiPE_degrade_test'
+WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
+
+TILENAME='T48PWS'
+
 def zerooone(x):
-    '''Return 1 if x>0 else 0'''
-    if x>0:
-        r=1
+    if x==0:
+        r=False
     else:
-        r=0
+        r=True
     return r
 
 def polymer_zero(x):
@@ -56,7 +64,7 @@ class OptionParser (optparse.OptionParser):
         # Assumes the option's 'default' is set to None!
         if getattr(self.values, option.dest) is None:
             self.error("%s option not supplied" % option)
-            
+
 if len(sys.argv) == 1:
     TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")
 else:
@@ -88,16 +96,16 @@ for name in TILENAME:
     name=name.rstrip()
     TILE='*'+name+'*_polymer20m.nc'
     for path in list_files(INPUT,TILE):
-        monthdic[path.name[23:25]].append(str(path))
-        print (path.name)
-        TILEWIPE = '*' + name + '_' + path.name[19:27] + '*water.TIF'
+        monthdic[Path(path).name[23:25]].append(path)
+        print (Path(path).name)
+        TILEWIPE = '*' + name + '_' + Path(path).name[19:27] + '*water.TIF'
         WPE = list_files(WIPE_INPUT,TILEWIPE)
         if len(WPE[0]) != 0:
             monthdicW[Path(WPE[0]).name[15:17]].append(WPE[0])
             print (Path(WPE[0]).name)
         else:
             print('Missing WiPE mask, skipping data...')
-            del monthdic[path.name[23:25]][-1]
+            del monthdic[Path(path).name[23:25]][-1]
     data={}
     convert=['lat','lon','Rrs443','Rrs490','Rrs560','Rrs665','Rrs705']
     for a in monthdic :
@@ -105,31 +113,34 @@ for name in TILENAME:
         for i in monthdic[a] :
             print (i)
             ds=gdal.Open(i,gdal.GA_ReadOnly)
-            dsw=gdal.Open(monthdicW[a][t],gdal.GA_ReadOnly) #WiPE open
-            dww=dsw.GetRasterBand(1)
-            dww=dww.ReadAsArray()
-
+            with rasterio.open(monthdicW[a][t]) as dsw: # Open WiPE img and resample it to 20m
+                dww = dsw.read(
+                out_shape=(
+                    dsw.count,
+                    int(dsw.height*0.5),
+                    int(dsw.width*0.5)
+                    ),
+                    resampling=Resampling.nearest
+                )
+            dww=np.squeeze(dww.astype(int)) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
+            dww=np.vectorize(zerooone)(dww)
+            DATA = []
             for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
                 band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
-                dw=dw.ReadAsArray()
+                dw = band_ds.ReadAsArray()
                 dw = dw/np.pi #Convert Rw to Rrs
-                dw=ma.MaskedArray(dw,dww)
-
-                dw=np.vectorize(polymer_zero)(dw)
+                dw = np.where(dww,dw,9999999) #Apply WiPE mask
+                dw = np.vectorize(polymer_zero)(dw)
                 dw = dw.flatten() #.T
                 DATA.append(dw)
-            if type(WDATA[a]) != type(np.empty(0)) :
-                WDATA[a]=dw.astype(int) #Convert np.uint8 (0 to 255) to np.int64 in order to sum it
-            else:
-                WDATA[a]=WDATA[a]+dw.astype(int) #Convert np.uint8 (0 to 255) to np.int64 in order to sum it
-                occurence[a]=len(monthdic[a])
+            Rrs_mc_vis_nir = np.array(DATA).T
+            # Classification
+            Class = Chl_CONNECT(Rrs_mc_vis_nir,sensor='MSI').Class
+            Class = np.reshape(Class, (-1, 5490))
             t += 1
-        WDATAPERC[a]=(WDATA[a]*100)/occurence[a]
 
-    Rrs_mc_vis_nir = np.array(DATA).T
+    
 
-    # =============================================================================
-    # Load Rrs
-    # =============================================================================
-    Chl_NN_mc = Chl_CONNECT(Rrs_mc_vis_nir,sensor='MSI')
-    Class = Chl_NN_mc.Class
+
+    
+    
