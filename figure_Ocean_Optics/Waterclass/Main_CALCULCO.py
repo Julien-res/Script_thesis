@@ -5,8 +5,8 @@ Created on Mon Sep 23 14:49:11 2024
 @author: Julien Masson
 
 """
-WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
-# WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+# WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
+WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
 import pandas as pd
 import os
 import sys
@@ -29,12 +29,12 @@ from rasterio.enums import Resampling
 # INPUT = 
 # WIPE_INPUT = 
 
-# PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
-# INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-# WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-PATH='/mnt/d/DATA/WiPE_degrade_test'
-INPUT='/mnt/d/DATA/WiPE_degrade_test'
-WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
+PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
+INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# PATH='/mnt/d/DATA/WiPE_degrade_test'
+# INPUT='/mnt/d/DATA/WiPE_degrade_test'
+# WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
 
 TILENAME='T48PWS'
 
@@ -48,45 +48,54 @@ def zerooone(x):
 def polymer_zero(x):
     '''Replace values meaning no data to None'''
     if x>999999:
-        r=None
+        r=0
     else:
         r=x
     return r
+
+def bitmaskp(x):
+    if x in [1,2,4,8,16,32,64,128,512]:
+        r=0
+    else:
+        r=x
+    return r
+
+
+
 
 def list_files(directory_path,pattern):
     files_list = [str(file) for file in Path(directory_path).rglob(pattern)]
     return files_list
 
-class OptionParser (optparse.OptionParser):
-    def check_required(self, opt):
-        option = self.get_option(opt)
-
-        # Assumes the option's 'default' is set to None!
-        if getattr(self.values, option.dest) is None:
-            self.error("%s option not supplied" % option)
-
-if len(sys.argv) == 1:
-    TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")
-else:
-    usage = "usage: %prog [options] "
-    parser = OptionParser(usage=usage)
-
-    parser.add_option("-t", "--tile", dest="tile", action="store", type="string",
-                    help="Entry (str): Tiles to treat"
-                    ,default=None)
-    (options, args) = parser.parse_args()
-
-PATH_POLYM=['/mnt/c/Users/Julien/Documents/WiPE_degrade_test/L1C_T48PWS_A029573_20210219T033017_polymer10m.nc',
-            '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/L1C_T48PWS_A029573_20210219T033017_polymer20m.nc',
-            '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/L1C_T48PWS_A029573_20210219T033017_polymer60m.nc']
+# if __name__=='__main__':
+#     class OptionParser (optparse.OptionParser):
+#         def check_required(self, opt):
+#             option = self.get_option(opt)
+#             # Assumes the option's 'default' is set to None!
+#             if getattr(self.values, option.dest) is None:
+#                 self.error("%s option not supplied" % option)
+#     if len(sys.argv) == 1:
+#         TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")
+#     else:
+#         usage = "usage: %prog [options] "
+#         parser = OptionParser(usage=usage)
+#         parser.add_option("-t", "--tile", dest="tile", action="store", type="string",
+#                         help="Entry (str): Tiles to treat"
+#                         ,default=None)
+#         (options, args) = parser.parse_args()
 
 BANDS = meta.SENSOR_BANDS['MSI-SOLID']
-RRS = {}
-RRS_MC = {}
 
 # =============================================================================
 # Open data
 # =============================================================================
+
+WET=[]
+WETPERC=[]
+WETNUM=0
+DRY=[]
+DRYPERC=[]
+DRYNUM=0
 for name in TILENAME:
     WDATA={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
     WDATAPERC={'01':[],'02':[],'03':[],'04':[],'05':[],'06':[],'07':[],'08':[],'09':[],'10':[],'11':[],'12':[]}
@@ -125,22 +134,80 @@ for name in TILENAME:
             dww=np.squeeze(dww.astype(int)) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
             dww=np.vectorize(zerooone)(dww)
             DATA = []
+            bitmask = gdal.Open(ds.GetSubDatasets()[3][0], gdal.GA_ReadOnly) #Polymer open
             for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
                 band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
                 dw = band_ds.ReadAsArray()
                 dw = dw/np.pi #Convert Rw to Rrs
-                dw = np.where(dww,dw,9999999) #Apply WiPE mask
-                dw = np.vectorize(polymer_zero)(dw)
+                dw = np.where(dww,dw,0) #Apply WiPE mask
+                dw = np.vectorize(bitmaskp)(dw) #Apply Polymer bitmask
                 dw = dw.flatten() #.T
                 DATA.append(dw)
-            Rrs_mc_vis_nir = np.array(DATA).T
-            # Classification
-            Class = Chl_CONNECT(Rrs_mc_vis_nir,sensor='MSI').Class
-            Class = np.reshape(Class, (-1, 5490))
+            if t == 0:
+                WDATA[a] = np.array(DATA).T
+            else:
+                WDATA[a] = WDATA[a] + np.array(DATA).T
+            DATA=None
             t += 1
+        # Classification
+        if a in ('01','02','03','04','05','12'):
+            if a == '01':
+                DRY[a] = WDATA[a]
+                DRYNUM = t
+            else:
+                DRY[a] = DRY[a] + WDATA[a]
+                DRYNUM += t
+        else:
+            if a =='06':
+                WET[a] = WDATA[a]
+                WETNUM = t
+            else:
+                WET[a] = WET[a] + WDATA[a]
+                WETNUM += t
+        occurence[a] = t
 
-    
+        Class = Chl_CONNECT(WDATA[a]/t,sensor='MSI').Class
+        WDATA[a] = np.reshape(Class, (-1, 5490))
+        Class = None
+
+        print ('Processing '+i+' month')
+        if type(WDATA[a])==type(np.empty(0)):
+            [rows, cols] = dw.shape
+            driver = gdal.GetDriverByName("GTiff")
+            outdata = driver.Create('Waterclass_'+a+'_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+            outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
+            outdata.SetProjection(ds.GetProjection())##sets same projection as input
+            outdata.GetRasterBand(1).WriteArray(WDATA[a])
+            outdata.FlushCache() ##saves to disk!!
+            outdata = None
+    WDATA=None
+
+    Class = Chl_CONNECT(WET/WETNUM,sensor='MSI').Class
+    WET = np.reshape(Class, (-1, 5490))
+    Class = None
+    print ('Processing WET')
+    if type(WET)==type(np.empty(0)):
+        [rows, cols] = dw.shape
+        driver = gdal.GetDriverByName("GTiff")
+        outdata = driver.Create('Waterclass_WET_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+        outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
+        outdata.SetProjection(ds.GetProjection())##sets same projection as input
+        outdata.GetRasterBand(1).WriteArray(WET)
+        outdata.FlushCache() ##saves to disk!!
+        outdata = None
+
+    Class = Chl_CONNECT(DRY/DRYNUM,sensor='MSI').Class
+    DRY = np.reshape(Class, (-1, 5490))
+    Class = None
+    print ('Processing DRY')
+    if type(DRY)==type(np.empty(0)):
+        [rows, cols] = dw.shape
+        driver = gdal.GetDriverByName("GTiff")
+        outdata = driver.Create('Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+        outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
+        outdata.SetProjection(ds.GetProjection())##sets same projection as input
+        outdata.GetRasterBand(1).WriteArray(DRY)
+        outdata.FlushCache() ##saves to disk!!
+        outdata = None
 
 
-    
-    
