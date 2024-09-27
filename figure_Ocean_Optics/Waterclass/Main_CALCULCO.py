@@ -5,8 +5,8 @@ Created on Mon Sep 23 14:49:11 2024
 @author: Julien Masson
 
 """
-# WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
-WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
+# WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
 import pandas as pd
 import os
 import sys
@@ -22,6 +22,7 @@ import optparse
 from pathlib import Path
 import rasterio
 from rasterio.enums import Resampling
+import itertools
 # =============================================================================
 # Variables
 # =============================================================================
@@ -29,13 +30,12 @@ from rasterio.enums import Resampling
 # INPUT = 
 # WIPE_INPUT = 
 
-PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
-INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-# PATH='/mnt/d/DATA/WiPE_degrade_test'
-# INPUT='/mnt/d/DATA/WiPE_degrade_test'
-# WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
-
+# PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
+# INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+PATH='/mnt/d/DATA/WiPE_degrade_test'
+INPUT='/mnt/d/DATA/WiPE_degrade_test'
+WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
 TILENAME='T48PWS'
 
 def zerooone(x):
@@ -48,7 +48,7 @@ def zerooone(x):
 def polymer_zero(x):
     '''Replace values meaning no data to None'''
     if x>999999:
-        r=0
+        r=np.nan
     else:
         r=x
     return r
@@ -128,16 +128,16 @@ for name in TILENAME: # For all listed TILENAME
             # Mask ==================
             dww=np.squeeze(dww.astype(int)) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
             dww=np.vectorize(zerooone)(dww) #Convert to mask True or False to apply
-            bitmask = gdal.Open(ds.GetSubDatasets()[3][0], gdal.GA_ReadOnly) #Polymer open
-            bitmask = np.vectorize(bitmaskp)(bitmask)
-            bitmask = np.where(dww,bitmask,0) #Fusion bitmask and WiPE to save compute time
+            bitmask = gdal.Open(ds.GetSubDatasets()[2][0], gdal.GA_ReadOnly).ReadAsArray() #Polymer open
+            bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
+            bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
             dww=None
             DATA = []
             for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
                 band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
                 dw = band_ds.ReadAsArray()
                 dw = dw/np.pi #Convert Rw to Rrs
-                dw = np.where(bitmask,dw,0) #Apply Polymer and WiPE bitmask
+                dw = np.where(bitmask,dw,np.nan) #Apply Polymer and WiPE bitmask
                 dw = dw.flatten() #.T # create vector from array
                 DATA.append(dw) # create the 5 vector array to process
             dww=None
@@ -151,29 +151,38 @@ for name in TILENAME: # For all listed TILENAME
         # Classification
         if a in ('01','02','03','04','05','12'):
             if a == '01':
-                DRY[a] = WDATA[a]
+                DRY = WDATA[a]
                 DRYNUM = t
             else:
-                DRY[a] = DRY[a] + WDATA[a]
+                DRY = DRY + WDATA[a]
                 DRYNUM += t
         else:
             if a =='06':
-                WET[a] = WDATA[a]
+                WET = WDATA[a]
                 WETNUM = t
             else:
-                WET[a] = WET[a] + WDATA[a]
+                WET = WET + WDATA[a]
                 WETNUM += t
         occurence[a] = t
-        Class = Chl_CONNECT(WDATA[a]/t,sensor='MSI').Class
+        tmp = np.array_split(WDATA[a]/t,6) # Splitting image to be able to process on less than 64Gb RAM system
+        Pa = 0
+        for p in tmp:
+            if Pa ==0 :
+                WDATA[a] = Chl_CONNECT(p,sensor='MSI').Class
+            else :
+                WDATA[a] = np.append(WDATA[a],Chl_CONNECT(p,sensor='MSI').Class)
+            Pa += 1
         WDATA[a] = np.reshape(Class, (-1, 5490))
         Class = None
-        print ('Processing '+i+' month')
-        if type(WDATA[a])==type(np.empty(0)):
-            [rows, cols] = dw.shape
+        print ('Processing ' + i + ' month')
+        if type(WDATA[a]) == type(np.empty(0)):
             driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create('Waterclass_'+a+'_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
-            outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
-            outdata.SetProjection(ds.GetProjection())##sets same projection as input
+            outdata = driver.Create('Waterclass_'+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+            dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+            geot=dwt.GetGeoTransform()
+            geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+            outdata.SetGeoTransform(geot)##sets same geotransform as input
+            outdata.SetProjection(dwt.GetProjection())##sets same projection as input
             outdata.GetRasterBand(1).WriteArray(WDATA[a])
             outdata.FlushCache() ##saves to disk!!
             outdata = None
@@ -184,11 +193,13 @@ for name in TILENAME: # For all listed TILENAME
     Class = None
     print ('Processing WET')
     if type(WET)==type(np.empty(0)):
-        [rows, cols] = dw.shape
         driver = gdal.GetDriverByName("GTiff")
-        outdata = driver.Create('Waterclass_WET_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
-        outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
-        outdata.SetProjection(ds.GetProjection())##sets same projection as input
+        outdata = driver.Create('Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+        dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+        geot=dwt.GetGeoTransform()
+        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+        outdata.SetGeoTransform(geot)##sets same geotransform as input
+        outdata.SetProjection(dwt.GetProjection())##sets same projection as input
         outdata.GetRasterBand(1).WriteArray(WET)
         outdata.FlushCache() ##saves to disk!!
         outdata = None
@@ -201,8 +212,10 @@ for name in TILENAME: # For all listed TILENAME
         [rows, cols] = dw.shape
         driver = gdal.GetDriverByName("GTiff")
         outdata = driver.Create('Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
-        outdata.SetGeoTransform(ds.GetGeoTransform())##sets same geotransform as input
-        outdata.SetProjection(ds.GetProjection())##sets same projection as input
+        dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+        geot=dwt.GetGeoTransform()
+        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+        outdata.SetGeoTransform(geot)##sets same geotransform as input
         outdata.GetRasterBand(1).WriteArray(DRY)
         outdata.FlushCache() ##saves to disk!!
         outdata = None
