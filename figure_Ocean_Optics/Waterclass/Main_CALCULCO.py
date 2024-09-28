@@ -6,7 +6,8 @@ Created on Mon Sep 23 14:49:11 2024
 
 """
 # WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
-WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+# WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+WORKDIR='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/Figure_OO/Chl-CONNECT/'
 import pandas as pd
 import os
 import sys
@@ -25,6 +26,7 @@ from rasterio.enums import Resampling
 import itertools
 from netCDF4 import Dataset
 from pyhdf.SD import SD, SDC
+from operator import add
 # =============================================================================
 # Variables
 # =============================================================================
@@ -32,13 +34,17 @@ from pyhdf.SD import SD, SDC
 # INPUT = 
 # WIPE_INPUT = 
 
-PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
-INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
+# INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+
 # PATH='/mnt/d/DATA/WiPE_degrade_test'
 # INPUT='/mnt/d/DATA/WiPE_degrade_test'
 # WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
-TILENAME=['T48PWS']
+# TILENAME=['T48PWS']
+INPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_Polymer_20m/'
+WIPE_INPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/RAW/'
+OUTPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/Figure_OO/Class_OUT/'
 
 def zerooone(x):
     if x==0:
@@ -162,7 +168,7 @@ for name in TILENAME: # For all listed TILENAME
             if t == 0:
                 WDATA[a] = DATA
             else:
-                WDATA[a] = WDATA[a] + DATA
+                WDATA[a] = list( map(add, WDATA[a], DATA))
             DATA=None
             t += 1
         # Classification
@@ -171,20 +177,22 @@ for name in TILENAME: # For all listed TILENAME
                 DRY = WDATA[a]
                 DRYNUM = occurence[a]
             else:
-                DRY = DRY + WDATA[a]
+                DRY = list( map(add, WDATA[a], DRY))
                 DRYNUM = DRYNUM + occurence[a]
         else:
             if a =='06':
                 WET = WDATA[a]
                 WETNUM = occurence[a]
             else:
-                WET = WET + WDATA[a]
+                WET = list( map(add, WDATA[a], WET))
                 WETNUM = WETNUM + occurence[a]
+        for z in range(0,len(DRY)):
+            DRY
         WDATA[a] = Chl_CONNECT(WDATA[a]/occurence[a],sensor='MSI').Class
         print ('Processing ' + i + ' month')
         if type(WDATA[a]) == type(np.empty(0)):
             driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create('Waterclass_'+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+            outdata = driver.Create(OUTPUT+'Waterclass_'+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
             dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
             geot=dwt.GetGeoTransform()
             geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
@@ -200,7 +208,7 @@ for name in TILENAME: # For all listed TILENAME
     print ('Processing WET')
     if type(WET)==type(np.empty(0)):
         driver = gdal.GetDriverByName("GTiff")
-        outdata = driver.Create('Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+        outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
         dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
         geot=dwt.GetGeoTransform()
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
@@ -217,7 +225,7 @@ for name in TILENAME: # For all listed TILENAME
     if type(DRY)==type(np.empty(0)):
         [rows, cols] = dw.shape
         driver = gdal.GetDriverByName("GTiff")
-        outdata = driver.Create('Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+        outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
         dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
         geot=dwt.GetGeoTransform()
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
