@@ -116,12 +116,12 @@ for name in TILENAME: # For all listed TILENAME
         print (Path(path).name)
         TILEWIPE = '*' + name + '_' + Path(path).name[19:27] + '*water.TIF'
         WPE = list_files(WIPE_INPUT,TILEWIPE)
-        if len(WPE[0]) != 0:
-            monthdicW[Path(WPE[0]).name[15:17]].append(WPE[0])
-            print (Path(WPE[0]).name)
-        else:
+        if not WPE:
             print('Missing WiPE mask, skipping data...')
             del monthdic[Path(path).name[23:25]][-1]
+        else:
+            monthdicW[Path(WPE[0]).name[15:17]].append(WPE[0])
+            print (Path(WPE[0]).name)
     data={}
     convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
     for a in monthdic : #For all month
