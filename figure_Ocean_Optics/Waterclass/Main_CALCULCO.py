@@ -197,8 +197,7 @@ for name in TILENAME: # For all listed TILENAME
                 tmp.append(WDATA[a][b]/occurence[a])
                 if np.isnan(tmp[b]).all():
                     sys.exit(-1)
-                else:
-                    print(tmp[b])
+            print(tmp[b])
         print (WDATA[a][b])
         WDATA[a] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
         print('Output'+a)
