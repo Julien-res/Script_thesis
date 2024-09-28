@@ -125,7 +125,7 @@ for name in TILENAME: # For all listed TILENAME
     convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
     for a in monthdic : #For all month
         t=0
-        print('number of elem to treat this month : '+len(monthdic[a]))
+        print('number of elem to treat this month : '+int(len(monthdic[a])))
         for i in monthdic[a] : # For all images in those month
             print (i)
             # ds=gdal.Open(i,gdal.GA_ReadOnly)
