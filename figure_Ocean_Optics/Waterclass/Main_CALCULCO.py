@@ -30,7 +30,6 @@ import rasterio
 from rasterio.enums import Resampling
 import itertools
 from netCDF4 import Dataset
-from pyhdf.SD import SD, SDC
 from operator import add
 # =============================================================================
 # Variables
