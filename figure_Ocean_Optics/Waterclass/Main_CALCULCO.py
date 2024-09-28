@@ -57,6 +57,19 @@ def zerooone(x):
         r=True
     return r
 
+def testnan(x):
+    if x==False:
+        r=np.nan
+    else:
+        r=x
+    return r
+
+def polymernan(x):
+    if x==np.inf or x==-np.inf or x==0:
+        r=np.nan
+    else:
+        r=x
+    return r
 
 def polymer_zero(x):
     '''Replace values meaning no data to None'''
@@ -152,16 +165,6 @@ for name in TILENAME: # For all listed TILENAME
             bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             # bitmask = np.vectorize(bitmaskp)(bitmask) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
-            driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create(OUTPUT+'bitmask_'+str(t)+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-            dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
-            geot=dwt.GetGeoTransform()
-            geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-            outdata.SetGeoTransform(geot)##sets same geotransform as input
-            outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-            outdata.GetRasterBand(1).WriteArray(bitmask.astype(int))
-            outdata.FlushCache() ##saves to disk!!
-            outdata = None
             if t==0:
                 occurence[a]=bitmask.astype(int)
             else:
@@ -174,11 +177,11 @@ for name in TILENAME: # For all listed TILENAME
             #     dw = np.where(bitmask,dw,np.nan) #Apply Polymer and WiPE bitmask
             #     dw = dw.flatten() #.T # create vector from array
             #     DATA.append(dw) # create the 5 vector array to process
+            if np.isnan(np.vectorize(testnan)(bitmask)).all():
+                print('Empty bitmask, no data')
+                break
             for b in range(0,len(DATA)):
-                DATA[b] = np.where(bitmask,DATA[b],np.nan) #apply bitmask
-            if np.isnan(DATA[0]).all():
-                print('DATA is all nan at point 2')
-                sys.exit(-1)
+                DATA[b] = np.where(bitmask,DATA[b],0) #apply bitmask
             dww=None
             bitmask=None
             if t == 0:
@@ -187,9 +190,6 @@ for name in TILENAME: # For all listed TILENAME
                 WDATA[a] = list( map(add, WDATA[a], DATA))
             DATA=None
             t += 1
-            if np.isnan(WDATA[a][0]).all():
-                print('WDATA[a] is all nan at point 3')
-                sys.exit(-1)
         print ('Processing ' + a + ' month')
         # Classification
         if a in ('01','02','03','04','05','12'):
@@ -212,7 +212,8 @@ for name in TILENAME: # For all listed TILENAME
             print (WDATA[a][b].shape)
             if not np.isnan(WDATA[a][b]).all():
                 print('OK not empty')
-                tmp.append(WDATA[a][b]/occurence[a])
+                tmpp=WDATA[a][b]/occurence[a]
+                tmp.append(np.vectorize(polymernan)(tmpp))
                 if np.isnan(tmp[b]).all():
                     sys.exit(-1)
                 print(tmp[b])
