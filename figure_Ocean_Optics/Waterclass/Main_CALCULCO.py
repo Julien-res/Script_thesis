@@ -175,6 +175,7 @@ for name in TILENAME: # For all listed TILENAME
                 WDATA[a] = list( map(add, WDATA[a], DATA))
             DATA=None
             t += 1
+        print ('Processing ' + a + ' month')
         # Classification
         if a in ('01','02','03','04','05','12'):
             if a == '01':
@@ -195,7 +196,7 @@ for name in TILENAME: # For all listed TILENAME
         for b in range(0,len(WDATA[a])):
             tmp.append(WDATA[a][b]/occurence[a])
         WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
-        print ('Processing ' + i + ' month')
+        print('Output'+a)
         if type(WDATA[a]) == type(np.empty(0)):
             driver = gdal.GetDriverByName("GTiff")
             outdata = driver.Create(OUTPUT+'Waterclass_'+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
