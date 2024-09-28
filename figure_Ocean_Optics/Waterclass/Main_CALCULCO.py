@@ -191,8 +191,9 @@ for name in TILENAME: # For all listed TILENAME
                 WET = list( map(add, WDATA[a], WET))
                 WETNUM = WETNUM + occurence[a]
         tmp=[]
+        print (len(WDATA[a]))
         for b in range(0,len(WDATA[a])):
-            tmp.append(WDATA[a]/occurence[a])
+            tmp.append(WDATA[a][b]/occurence[a])
         WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
         print ('Processing ' + i + ' month')
         if type(WDATA[a]) == type(np.empty(0)):
