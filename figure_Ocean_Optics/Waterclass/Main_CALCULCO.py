@@ -176,8 +176,8 @@ for name in TILENAME: # For all listed TILENAME
             #     DATA.append(dw) # create the 5 vector array to process
             for b in range(0,len(DATA)):
                 DATA[b] = np.where(bitmask,DATA[b],np.nan) #apply bitmask
-            if np.isnan(WDATA[a][0]).all():
-                print('WDATA[a] is all nan at point 2')
+            if np.isnan(DATA[0]).all():
+                print('DATA is all nan at point 2')
                 sys.exit(-1)
             dww=None
             bitmask=None
