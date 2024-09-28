@@ -5,8 +5,8 @@ Created on Mon Sep 23 14:49:11 2024
 @author: Julien Masson
 
 """
-WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
-# WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
+# WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
+WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
 import pandas as pd
 import os
 import sys
@@ -23,6 +23,8 @@ from pathlib import Path
 import rasterio
 from rasterio.enums import Resampling
 import itertools
+from netCDF4 import Dataset
+from pyhdf.SD import SD, SDC
 # =============================================================================
 # Variables
 # =============================================================================
@@ -30,13 +32,13 @@ import itertools
 # INPUT = 
 # WIPE_INPUT = 
 
-# PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
-# INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-# WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
-PATH='/mnt/d/DATA/WiPE_degrade_test'
-INPUT='/mnt/d/DATA/WiPE_degrade_test'
-WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
-TILENAME='T48PWS'
+PATH = "/mnt/c/Users/Julien/Documents/WiPE_degrade_test/"
+INPUT='/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+WIPE_INPUT = '/mnt/c/Users/Julien/Documents/WiPE_degrade_test/'
+# PATH='/mnt/d/DATA/WiPE_degrade_test'
+# INPUT='/mnt/d/DATA/WiPE_degrade_test'
+# WIPE_INPUT='/mnt/d/DATA/WiPE_degrade_test'
+TILENAME=['T48PWS']
 
 def zerooone(x):
     if x==0:
@@ -44,6 +46,7 @@ def zerooone(x):
     else:
         r=True
     return r
+
 
 def polymer_zero(x):
     '''Replace values meaning no data to None'''
@@ -110,12 +113,21 @@ for name in TILENAME: # For all listed TILENAME
             print('Missing WiPE mask, skipping data...')
             del monthdic[Path(path).name[23:25]][-1]
     data={}
-    convert=['lat','lon','Rrs443','Rrs490','Rrs560','Rrs665','Rrs705']
+    convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
     for a in monthdic : #For all month
         t=0
         for i in monthdic[a] : # For all images in those month
             print (i)
-            ds=gdal.Open(i,gdal.GA_ReadOnly)
+            # ds=gdal.Open(i,gdal.GA_ReadOnly)
+            DATA=[]
+            with Dataset(i, mode='r') as ds:
+                lon=ds.variables['longitude'][:].data
+                lat=ds.variables['latitude'][:].data
+                bitmask=ds.variables['bitmask'][:].data
+                for wl in convert:
+                    data=ds.variables[wl][:].data/np.pi
+                    DATA.append(data)
+                    initShape=data.shape
             with rasterio.open(monthdicW[a][t]) as dsw: # Open WiPE img and resample it to 20m
                 dww = dsw.read(
                 out_shape=(
@@ -126,54 +138,49 @@ for name in TILENAME: # For all listed TILENAME
                     resampling=Resampling.nearest
                 )
             # Mask ==================
-            dww=np.squeeze(dww.astype(int)) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
+            dww=np.squeeze(dww) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
             dww=np.vectorize(zerooone)(dww) #Convert to mask True or False to apply
-            bitmask = gdal.Open(ds.GetSubDatasets()[2][0], gdal.GA_ReadOnly).ReadAsArray() #Polymer open
+            # bitmask = gdal.Open(ds.GetSubDatasets()[2][0], gdal.GA_ReadOnly).ReadAsArray() #Polymer open
             bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
+            if t==0:
+                    occurence[a]=bitmask
+                else:
+                    occurence[a]= occurence[a] + bitmask
             dww=None
-            DATA = []
-            for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
-                band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
-                dw = band_ds.ReadAsArray()
-                dw = dw/np.pi #Convert Rw to Rrs
-                dw = np.where(bitmask,dw,np.nan) #Apply Polymer and WiPE bitmask
-                dw = dw.flatten() #.T # create vector from array
-                DATA.append(dw) # create the 5 vector array to process
+            # for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
+            #     band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
+            #     dw = band_ds.ReadAsArray()
+            #     dw = dw/np.pi #Convert Rw to Rrs
+            #     dw = np.where(bitmask,dw,np.nan) #Apply Polymer and WiPE bitmask
+            #     dw = dw.flatten() #.T # create vector from array
+            #     DATA.append(dw) # create the 5 vector array to process
+            for b in range(0,len(DATA)):
+                DATA[b] = np.where(bitmask,DATA[b],np.nan) #apply bitmask
             dww=None
             bitmask=None
             if t == 0:
-                WDATA[a] = np.array(DATA).T # convert as array and transpose
+                WDATA[a] = DATA
             else:
-                WDATA[a] = WDATA[a] + np.array(DATA).T
+                WDATA[a] = WDATA[a] + DATA
             DATA=None
             t += 1
         # Classification
         if a in ('01','02','03','04','05','12'):
             if a == '01':
                 DRY = WDATA[a]
-                DRYNUM = t
+                DRYNUM = occurence[a]
             else:
                 DRY = DRY + WDATA[a]
-                DRYNUM += t
+                DRYNUM = DRYNUM + occurence[a]
         else:
             if a =='06':
                 WET = WDATA[a]
-                WETNUM = t
+                WETNUM = occurence[a]
             else:
                 WET = WET + WDATA[a]
-                WETNUM += t
-        occurence[a] = t
-        tmp = np.array_split(WDATA[a]/t,6) # Splitting image to be able to process on less than 64Gb RAM system
-        Pa = 0
-        for p in tmp:
-            if Pa ==0 :
-                WDATA[a] = Chl_CONNECT(p,sensor='MSI').Class
-            else :
-                WDATA[a] = np.append(WDATA[a],Chl_CONNECT(p,sensor='MSI').Class)
-            Pa += 1
-        WDATA[a] = np.reshape(Class, (-1, 5490))
-        Class = None
+                WETNUM = WETNUM + occurence[a]
+        WDATA[a] = Chl_CONNECT(WDATA[a]/occurence[a],sensor='MSI').Class
         print ('Processing ' + i + ' month')
         if type(WDATA[a]) == type(np.empty(0)):
             driver = gdal.GetDriverByName("GTiff")
@@ -187,7 +194,6 @@ for name in TILENAME: # For all listed TILENAME
             outdata.FlushCache() ##saves to disk!!
             outdata = None
     WDATA=None
-
     Class = Chl_CONNECT(WET/WETNUM,sensor='MSI').Class
     WET = np.reshape(Class, (-1, 5490))
     Class = None
