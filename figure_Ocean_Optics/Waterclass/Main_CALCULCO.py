@@ -193,7 +193,8 @@ for name in TILENAME: # For all listed TILENAME
         print (len(WDATA[a]))
         for b in range(0,len(WDATA[a])):
             print (WDATA[a][b].shape)
-            tmp.append(WDATA[a][b]/occurence[a])
+            if not np.isnan(WDATA[a][b]).all():
+                tmp.append(WDATA[a][b]/occurence[a])
         print (WDATA[a][b])
         WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
         print('Output'+a)
