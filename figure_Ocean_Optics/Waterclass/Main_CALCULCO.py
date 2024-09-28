@@ -194,10 +194,13 @@ for name in TILENAME: # For all listed TILENAME
         for b in range(0,len(WDATA[a])):
             print (WDATA[a][b].shape)
             if not np.isnan(WDATA[a][b]).all():
+                print('OK not empty')
                 tmp.append(WDATA[a][b]/occurence[a])
                 if np.isnan(tmp[b]).all():
                     sys.exit(-1)
-            print(tmp[b])
+                print(tmp[b])
+            else:
+                print('WDATA[a] '+str(b)+' all nan!')
         print (WDATA[a][b])
         WDATA[a] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
         print('Output'+a)
