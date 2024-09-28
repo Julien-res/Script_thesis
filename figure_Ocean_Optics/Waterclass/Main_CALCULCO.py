@@ -8,6 +8,11 @@ Created on Mon Sep 23 14:49:11 2024
 # WORKDIR='/mnt/c/Travail/Script/Chl-CONNECT'
 # WORKDIR='/mnt/c/Users/Julien/Documents/Chl-CONNECT/'   
 WORKDIR='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/Figure_OO/Chl-CONNECT/'
+
+import os
+import sys
+file_dir = os.path.dirname(__file__)
+sys.path.append(file_dir)
 import pandas as pd
 import os
 import sys
