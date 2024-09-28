@@ -77,22 +77,22 @@ def list_files(directory_path,pattern):
     files_list = [str(file) for file in Path(directory_path).rglob(pattern)]
     return files_list
 
-# if __name__=='__main__':
-#     class OptionParser (optparse.OptionParser):
-#         def check_required(self, opt):
-#             option = self.get_option(opt)
-#             # Assumes the option's 'default' is set to None!
-#             if getattr(self.values, option.dest) is None:
-#                 self.error("%s option not supplied" % option)
-#     if len(sys.argv) == 1:
-#         TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")
-#     else:
-#         usage = "usage: %prog [options] "
-#         parser = OptionParser(usage=usage)
-#         parser.add_option("-t", "--tile", dest="tile", action="store", type="string",
-#                         help="Entry (str): Tiles to treat"
-#                         ,default=None)
-#         (options, args) = parser.parse_args()
+if __name__=='__main__':
+    class OptionParser (optparse.OptionParser):
+        def check_required(self, opt):
+            option = self.get_option(opt)
+            # Assumes the option's 'default' is set to None!
+            if getattr(self.values, option.dest) is None:
+                self.error("%s option not supplied" % option)
+    if len(sys.argv) == 1:
+        TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")
+    else:
+        usage = "usage: %prog [options] "
+        parser = OptionParser(usage=usage)
+        parser.add_option("-t", "--tile", dest="tile", action="store", type="string",
+                        help="Entry (str): Tiles to treat"
+                        ,default=None)
+        (options, args) = parser.parse_args()
 
 BANDS = meta.SENSOR_BANDS['MSI-SOLID']
 
