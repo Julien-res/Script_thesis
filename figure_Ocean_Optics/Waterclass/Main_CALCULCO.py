@@ -151,8 +151,8 @@ for name in TILENAME: # For all listed TILENAME
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
             if t==0:
                     occurence[a]=bitmask
-                else:
-                    occurence[a]= occurence[a] + bitmask
+            else:
+                occurence[a]= occurence[a] + bitmask
             dww=None
             # for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
             #     band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
