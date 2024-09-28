@@ -186,9 +186,10 @@ for name in TILENAME: # For all listed TILENAME
             else:
                 WET = list( map(add, WDATA[a], WET))
                 WETNUM = WETNUM + occurence[a]
-        for z in range(0,len(DRY)):
-            DRY
-        WDATA[a] = Chl_CONNECT(WDATA[a]/occurence[a],sensor='MSI').Class
+        tmp=[]
+        for b in range(0,len(WDATA[a])):
+            tmp.append(WDATA[a]/occurence[a])
+        WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
         print ('Processing ' + i + ' month')
         if type(WDATA[a]) == type(np.empty(0)):
             driver = gdal.GetDriverByName("GTiff")
@@ -201,10 +202,13 @@ for name in TILENAME: # For all listed TILENAME
             outdata.GetRasterBand(1).WriteArray(WDATA[a])
             outdata.FlushCache() ##saves to disk!!
             outdata = None
+    DRYA=[]
+    WETA=[]
+    for z in range(0,len(DRY)):
+        DRYA.append(DRY[z]/DRYNUM)
+        WETA.append(WET[z]/WETNUM)
     WDATA=None
-    Class = Chl_CONNECT(WET/WETNUM,sensor='MSI').Class
-    WET = np.reshape(Class, (-1, 5490))
-    Class = None
+    Class = Chl_CONNECT(WETA,sensor='MSI').Class
     print ('Processing WET')
     if type(WET)==type(np.empty(0)):
         driver = gdal.GetDriverByName("GTiff")
@@ -214,13 +218,11 @@ for name in TILENAME: # For all listed TILENAME
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
         outdata.SetGeoTransform(geot)##sets same geotransform as input
         outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-        outdata.GetRasterBand(1).WriteArray(WET)
+        outdata.GetRasterBand(1).WriteArray(Class)
         outdata.FlushCache() ##saves to disk!!
         outdata = None
 
-    Class = Chl_CONNECT(DRY/DRYNUM,sensor='MSI').Class
-    DRY = np.reshape(Class, (-1, 5490))
-    Class = None
+    Class = Chl_CONNECT(DRYA,sensor='MSI').Class
     print ('Processing DRY')
     if type(DRY)==type(np.empty(0)):
         [rows, cols] = dw.shape
@@ -230,7 +232,7 @@ for name in TILENAME: # For all listed TILENAME
         geot=dwt.GetGeoTransform()
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
         outdata.SetGeoTransform(geot)##sets same geotransform as input
-        outdata.GetRasterBand(1).WriteArray(DRY)
+        outdata.GetRasterBand(1).WriteArray(Class)
         outdata.FlushCache() ##saves to disk!!
         outdata = None
 
