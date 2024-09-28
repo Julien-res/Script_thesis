@@ -112,14 +112,13 @@ for name in TILENAME: # For all listed TILENAME
     name=name.rstrip()
     TILE='*'+name+'*_polymer20m.nc'
     for path in list_files(INPUT,TILE):
-        monthdic[Path(path).name[23:25]].append(path)
-        print (Path(path).name)
         TILEWIPE = '*' + name + '_' + Path(path).name[19:27] + '*water.TIF'
         WPE = list_files(WIPE_INPUT,TILEWIPE)
         if not WPE:
             print('Missing WiPE mask, skipping data...')
-            del monthdic[Path(path).name[23:25]][-1]
         else:
+            monthdic[Path(path).name[23:25]].append(path)
+            print (Path(path).name)
             monthdicW[Path(WPE[0]).name[15:17]].append(WPE[0])
             print (Path(WPE[0]).name)
     data={}
@@ -194,6 +193,7 @@ for name in TILENAME: # For all listed TILENAME
         tmp=[]
         print (len(WDATA[a]))
         for b in range(0,len(WDATA[a])):
+            print (WDATA[a][b].shape)
             tmp.append(WDATA[a][b]/occurence[a])
         WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
         print('Output'+a)
