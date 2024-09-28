@@ -125,18 +125,17 @@ for name in TILENAME: # For all listed TILENAME
     convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
     for a in monthdic : #For all month
         t=0
+        print('number of elem to treat this month :'len(monthdic[a]))
         for i in monthdic[a] : # For all images in those month
             print (i)
             # ds=gdal.Open(i,gdal.GA_ReadOnly)
             DATA=[]
             with Dataset(i, mode='r') as ds:
-                lon=ds.variables['longitude'][:].data
-                lat=ds.variables['latitude'][:].data
                 bitmask=ds.variables['bitmask'][:].data
                 for wl in convert:
                     data=ds.variables[wl][:].data/np.pi
                     DATA.append(data)
-                    initShape=data.shape
+                    print(data.shape)
             with rasterio.open(monthdicW[a][t]) as dsw: # Open WiPE img and resample it to 20m
                 dww = dsw.read(
                 out_shape=(
@@ -148,14 +147,14 @@ for name in TILENAME: # For all listed TILENAME
                 )
             # Mask ==================
             dww=np.squeeze(dww) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
-            dww=np.vectorize(zerooone)(dww) #Convert to mask True or False to apply
+            dww=dww.astype(bool) #Convert to mask True or False to apply
             # bitmask = gdal.Open(ds.GetSubDatasets()[2][0], gdal.GA_ReadOnly).ReadAsArray() #Polymer open
             bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
             if t==0:
-                    occurence[a]=bitmask
+                occurence[a]=bitmask.astype(int)
             else:
-                occurence[a]= occurence[a] + bitmask
+                occurence[a]= occurence[a] + bitmask.astype(int)
             dww=None
             # for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
             #     band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
@@ -195,6 +194,7 @@ for name in TILENAME: # For all listed TILENAME
         for b in range(0,len(WDATA[a])):
             print (WDATA[a][b].shape)
             tmp.append(WDATA[a][b]/occurence[a])
+        print (WDATA[a][b])
         WDATA[a] = Chl_CONNECT(tmp,sensor='MSI').Class
         print('Output'+a)
         if type(WDATA[a]) == type(np.empty(0)):
