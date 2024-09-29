@@ -256,30 +256,27 @@ for name in TILENAME: # For all listed TILENAME
     WDATA=None
     Class = Chl_CONNECT(WETA,sensor='MSI').Class
     print ('Processing WET')
-    if type(WET)==type(np.empty(0)):
-        driver = gdal.GetDriverByName("GTiff")
-        outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
-        geot=dwt.GetGeoTransform()
-        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-        outdata.SetGeoTransform(geot)##sets same geotransform as input
-        outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-        outdata.GetRasterBand(1).WriteArray(Class)
-        outdata.FlushCache() ##saves to disk!!
-        outdata = None
+    driver = gdal.GetDriverByName("GTiff")
+    outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+    dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
+    geot=dwt.GetGeoTransform()
+    geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+    outdata.SetGeoTransform(geot)##sets same geotransform as input
+    outdata.SetProjection(dwt.GetProjection())##sets same projection as input
+    outdata.GetRasterBand(1).WriteArray(Class)
+    outdata.FlushCache() ##saves to disk!!
+    outdata = None
 
     Class = Chl_CONNECT(DRYA,sensor='MSI').Class
     print ('Processing DRY')
-    if type(DRY)==type(np.empty(0)):
-        [rows, cols] = dw.shape
-        driver = gdal.GetDriverByName("GTiff")
-        outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
-        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
-        geot=dwt.GetGeoTransform()
-        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-        outdata.SetGeoTransform(geot)##sets same geotransform as input
-        outdata.GetRasterBand(1).WriteArray(Class)
-        outdata.FlushCache() ##saves to disk!!
-        outdata = None
+    driver = gdal.GetDriverByName("GTiff")
+    outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+    dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
+    geot=dwt.GetGeoTransform()
+    geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+    outdata.SetGeoTransform(geot)##sets same geotransform as input
+    outdata.GetRasterBand(1).WriteArray(Class)
+    outdata.FlushCache() ##saves to disk!!
+    outdata = None
 
 
