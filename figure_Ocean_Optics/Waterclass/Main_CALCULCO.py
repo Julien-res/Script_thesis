@@ -201,8 +201,8 @@ for name in TILENAME: # For all listed TILENAME
         
         print ('Processing ' + month + ' month')
         # Classification
-        if a in ('01','02','03','04','05','12'):
-            if a == '01':
+        if month in ('01','02','03','04','05','12'):
+            if month == '01':
                 DRY = WDATA[month]
                 DRYNUM = occurence[month]
             else:
