@@ -270,7 +270,7 @@ for name in TILENAME: # For all listed TILENAME
     Class = Chl_CONNECT(DRYA,sensor='MSI').Class
     print ('Processing DRY')
     driver = gdal.GetDriverByName("GTiff")
-    outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
+    outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
     dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
     geot=dwt.GetGeoTransform()
     geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
