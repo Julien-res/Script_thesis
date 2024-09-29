@@ -65,7 +65,7 @@ def testnan(x):
     return r
 
 def polymernan(x):
-    if x==np.inf or x==-np.inf or x==0:
+    if x==np.inf or x==(-np.inf) or x==0:
         r=np.nan
     else:
         r=x
@@ -136,20 +136,22 @@ for name in TILENAME: # For all listed TILENAME
             print (Path(WPE[0]).name)
     data={}
     convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
-    for a in monthdic : #For all month
+    for month in monthdic : #For all month
         t=0
-        print('number of elem to treat this month : '+str(len(monthdic[a])))
-        for i in monthdic[a] : # For all images in those month
-            print (i)
-            # ds=gdal.Open(i,gdal.GA_ReadOnly)
+        print('number of elem to treat this month : '+str(len(monthdic[month])))
+        print(monthdic[month])
+        i=None
+        for pathdt in monthdic[month] : # For all images in those month
+            print (pathdt)
+            # ds=gdal.Open(pathdt,gdal.GA_ReadOnly)
             DATA=[]
-            with Dataset(i, mode='r') as ds:
+            with Dataset(pathdt, mode='r') as ds:
                 bitmask=ds.variables['bitmask'][:].data
                 for wl in convert:
                     data=ds.variables[wl][:].data/np.pi
                     DATA.append(data)
                     print(data.shape)
-            with rasterio.open(monthdicW[a][t]) as dsw: # Open WiPE img and resample it to 20m
+            with rasterio.open(monthdicW[month][t]) as dsw: # Open WiPE img and resample it to 20m
                 dww = dsw.read(
                 out_shape=(
                     dsw.count,
@@ -158,6 +160,7 @@ for name in TILENAME: # For all listed TILENAME
                     ),
                     resampling=Resampling.nearest
                 )
+                print('Watermask Opened')
             # Mask ==================
             dww=np.squeeze(dww) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
             dww=dww.astype(bool) #Convert to mask True or False to apply
@@ -166,9 +169,9 @@ for name in TILENAME: # For all listed TILENAME
             # bitmask = np.vectorize(bitmaskp)(bitmask) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
             if t==0:
-                occurence[a]=bitmask.astype(int)
+                occurence[month]=bitmask.astype(int)
             else:
-                occurence[a]= occurence[a] + bitmask.astype(int)
+                occurence[month]= occurence[month] + bitmask.astype(int)
             dww=None
             # for o in [7,8,9,10,11]: #0=lat,1=lon,7=Rw443,...
             #     band_ds = gdal.Open(ds.GetSubDatasets()[o][0], gdal.GA_ReadOnly) #Polymer open
@@ -179,60 +182,72 @@ for name in TILENAME: # For all listed TILENAME
             #     DATA.append(dw) # create the 5 vector array to process
             if np.isnan(np.vectorize(testnan)(bitmask)).all():
                 print('Empty bitmask, no data')
-                break
             for b in range(0,len(DATA)):
                 DATA[b] = np.where(bitmask,DATA[b],0) #apply bitmask
-            dww=None
-            bitmask=None
+
             if t == 0:
                 WDATA[a] = DATA
             else:
-                WDATA[a] = list( map(add, WDATA[a], DATA))
+                WDATA[a] = list( map(add, WDATA[month], DATA))
+            dww=None
+            bitmask=None
             DATA=None
             t += 1
-        print ('Processing ' + a + ' month')
+        print (t)
+        print(str(t) + ' treated out of '+ str(len(monthdic[month])))
+        if t != len(monthdic[month]):
+            print('ERROR, LESS MONTH TREATED THAN EXPECTED, CHECK CODE')
+            sys.exit(-1)
+        
+        print ('Processing ' + month + ' month')
         # Classification
         if a in ('01','02','03','04','05','12'):
             if a == '01':
-                DRY = WDATA[a]
-                DRYNUM = occurence[a]
+                DRY = WDATA[month]
+                DRYNUM = occurence[month]
             else:
-                DRY = list( map(add, WDATA[a], DRY))
-                DRYNUM = DRYNUM + occurence[a]
+                DRY = list( map(add, WDATA[month], DRY))
+                DRYNUM = DRYNUM + occurence[month]
         else:
-            if a =='06':
-                WET = WDATA[a]
-                WETNUM = occurence[a]
+            if month =='06':
+                WET = WDATA[month]
+                WETNUM = occurence[month]
             else:
-                WET = list( map(add, WDATA[a], WET))
-                WETNUM = WETNUM + occurence[a]
+                WET = list( map(add, WDATA[month], WET))
+                WETNUM = WETNUM + occurence[month]
         tmp=[]
-        print (len(WDATA[a]))
-        for b in range(0,len(WDATA[a])):
-            print (WDATA[a][b].shape)
-            if not np.isnan(WDATA[a][b]).all():
-                print('OK not empty')
-                tmpp=WDATA[a][b]/occurence[a]
+        print ('number of bands out of 5 : ' + str(len(WDATA[month]))
+        CONTROLE=0
+        for b in range(0,len(WDATA[month])):
+            if not np.isnan(WDATA[month][b]).all():
+                print('OK, bands not empty')
+                tmpp=WDATA[month][b]/occurence[month]
                 tmp.append(np.vectorize(polymernan)(tmpp))
                 if np.isnan(tmp[b]).all():
+                    print('WDATA DATA NOT EMPTY BUT TMP EMPTY, ERROR')
                     sys.exit(-1)
                 print(tmp[b])
             else:
-                print('WDATA[a] '+str(b)+' all nan!')
-        print (WDATA[a][b])
-        WDATA[a] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
-        print('Output'+a)
-        if type(WDATA[a]) == type(np.empty(0)):
+                print('WDATA[month] '+str(b)+' all nan!')
+                CONTROLE=1
+        print (WDATA[month][b])
+        WDATA[month] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
+        print('Output'+month)
+        if CONTROLE==0:
             driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create(OUTPUT+'Waterclass_'+a+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-            dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+            outdata = driver.Create(OUTPUT+'Waterclass_'+month+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+            dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
             geot=dwt.GetGeoTransform()
             geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
             outdata.SetGeoTransform(geot)##sets same geotransform as input
             outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-            outdata.GetRasterBand(1).WriteArray(WDATA[a])
+            outdata.GetRasterBand(1).WriteArray(WDATA[month])
             outdata.FlushCache() ##saves to disk!!
             outdata = None
+        else:
+            print('Not printing data, as WDATA[month] is all nan')
+        CONTROLE=0
+
     DRYA=[]
     WETA=[]
     for z in range(0,len(DRY)):
@@ -244,7 +259,7 @@ for name in TILENAME: # For all listed TILENAME
     if type(WET)==type(np.empty(0)):
         driver = gdal.GetDriverByName("GTiff")
         outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-        dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
         geot=dwt.GetGeoTransform()
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
         outdata.SetGeoTransform(geot)##sets same geotransform as input
@@ -259,7 +274,7 @@ for name in TILENAME: # For all listed TILENAME
         [rows, cols] = dw.shape
         driver = gdal.GetDriverByName("GTiff")
         outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', cols, rows, 1, gdal.GDT_UInt16) #UInt16
-        dwt=gdal.Open(monthdicW[a][0], gdal.GA_ReadOnly)
+        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
         geot=dwt.GetGeoTransform()
         geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
         outdata.SetGeoTransform(geot)##sets same geotransform as input
