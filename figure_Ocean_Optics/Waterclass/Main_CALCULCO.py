@@ -186,9 +186,9 @@ for name in TILENAME: # For all listed TILENAME
                 DATA[b] = np.where(bitmask,DATA[b],0) #apply bitmask
 
             if t == 0:
-                WDATA[a] = DATA
+                WDATA[month] = DATA
             else:
-                WDATA[a] = list( map(add, WDATA[month], DATA))
+                WDATA[month] = list( map(add, WDATA[month], DATA))
             dww=None
             bitmask=None
             DATA=None
