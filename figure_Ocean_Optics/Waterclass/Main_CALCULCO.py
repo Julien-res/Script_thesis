@@ -216,7 +216,7 @@ for name in TILENAME: # For all listed TILENAME
                 WET = list( map(add, WDATA[month], WET))
                 WETNUM = WETNUM + occurence[month]
         tmp=[]
-        print ('number of bands out of 5 : ' + str(len(WDATA[month]))
+        print ('number of bands out of 5 : ' + str(len(WDATA[month])))
         CONTROLE=0
         for b in range(0,len(WDATA[month])):
             if not np.isnan(WDATA[month][b]).all():
