@@ -43,6 +43,7 @@ else:
                     help="Entry (str): Tiles to treat"
                     ,default=None)
     (options, args) = parser.parse_args()
+    TILENAME = [options.tile]
 
 # if options.tile==None:
 #         TILENAME = open(os.path.join(WORKDIR,"List_tiles.txt"), "r")

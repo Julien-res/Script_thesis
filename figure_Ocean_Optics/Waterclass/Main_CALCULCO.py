@@ -216,68 +216,74 @@ for name in TILENAME: # For all listed TILENAME
             else:
                 WET = list( map(add, WDATA[month], WET))
                 WETNUM = WETNUM + occurence[month]
-        tmp=[]
-        print ('number of bands out of 5 : ' + str(len(WDATA[month])))
-        CONTROLE=0
-        for b in range(0,len(WDATA[month])):
-            if not np.isnan(WDATA[month][b]).all():
-                print('OK, bands not empty')
-                tmpp=WDATA[month][b]/occurence[month]
-                tmp.append(np.vectorize(polymernan)(tmpp))
-                if np.isnan(tmp[b]).all():
-                    print('WDATA DATA NOT EMPTY BUT TMP EMPTY, ERROR')
-                    sys.exit(-1)
-                print(tmp[b])
+        if len(list_files(OUTPUT,'Waterclass_'+month+'_'+name+'.tif'))==0:
+            tmp=[]
+            print ('number of bands out of 5 : ' + str(len(WDATA[month])))
+            CONTROLE=0
+            for b in range(0,len(WDATA[month])):
+                if not np.isnan(WDATA[month][b]).all():
+                    print('OK, bands not empty')
+                    tmpp=WDATA[month][b]/occurence[month]
+                    tmp.append(np.vectorize(polymernan)(tmpp))
+                    if np.isnan(tmp[b]).all():
+                        print('WDATA DATA NOT EMPTY BUT TMP EMPTY, ERROR')
+                        sys.exit(-1)
+                    print(tmp[b])
+                else:
+                    print('WDATA[month] '+str(b)+' all nan!')
+                    CONTROLE=1
+            print (WDATA[month][b])
+            WDATA[month] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
+            print('Output'+month)
+            if CONTROLE==0:
+                driver = gdal.GetDriverByName("GTiff")
+                outdata = driver.Create(OUTPUT+'Waterclass_'+month+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+                dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
+                geot=dwt.GetGeoTransform()
+                geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+                outdata.SetGeoTransform(geot)##sets same geotransform as input
+                outdata.SetProjection(dwt.GetProjection())##sets same projection as input
+                outdata.GetRasterBand(1).WriteArray(WDATA[month])
+                outdata.FlushCache() ##saves to disk!!
+                outdata = None
             else:
-                print('WDATA[month] '+str(b)+' all nan!')
-                CONTROLE=1
-        print (WDATA[month][b])
-        WDATA[month] = Chl_CONNECT(tmp,method='logreg',sensor='MSI',logRrsClassif=False,pTransform=False).Class
-        print('Output'+month)
-        if CONTROLE==0:
-            driver = gdal.GetDriverByName("GTiff")
-            outdata = driver.Create(OUTPUT+'Waterclass_'+month+'_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-            dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
-            geot=dwt.GetGeoTransform()
-            geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-            outdata.SetGeoTransform(geot)##sets same geotransform as input
-            outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-            outdata.GetRasterBand(1).WriteArray(WDATA[month])
-            outdata.FlushCache() ##saves to disk!!
-            outdata = None
+                print('Not printing data, as WDATA[month] is all nan')
+            CONTROLE=0
         else:
-            print('Not printing data, as WDATA[month] is all nan')
-        CONTROLE=0
+            print('skipping one month as it already exist locally. If you want to reprocess, please delete')
 
-    DRYA=[]
-    WETA=[]
-    for z in range(0,len(DRY)):
-        DRYA.append(DRY[z]/DRYNUM)
-        WETA.append(WET[z]/WETNUM)
-    WDATA=None
-    Class = Chl_CONNECT(WETA,sensor='MSI').Class
-    print ('Processing WET')
-    driver = gdal.GetDriverByName("GTiff")
-    outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-    dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
-    geot=dwt.GetGeoTransform()
-    geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-    outdata.SetGeoTransform(geot)##sets same geotransform as input
-    outdata.SetProjection(dwt.GetProjection())##sets same projection as input
-    outdata.GetRasterBand(1).WriteArray(Class)
-    outdata.FlushCache() ##saves to disk!!
-    outdata = None
-
-    Class = Chl_CONNECT(DRYA,sensor='MSI').Class
-    print ('Processing DRY')
-    driver = gdal.GetDriverByName("GTiff")
-    outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
-    dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
-    geot=dwt.GetGeoTransform()
-    geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
-    outdata.SetGeoTransform(geot)##sets same geotransform as input
-    outdata.GetRasterBand(1).WriteArray(Class)
-    outdata.FlushCache() ##saves to disk!!
-    outdata = None
-
-
+    if len(list_files(OUTPUT,'Waterclass_WET_'+name+'.tif'))==0:
+        DRYA=[]
+        WETA=[]
+        for z in range(0,len(DRY)):
+            DRYA.append(DRY[z]/DRYNUM)
+            WETA.append(WET[z]/WETNUM)
+        WDATA=None
+        Class = Chl_CONNECT(WETA,sensor='MSI').Class
+        print ('Processing WET')
+        driver = gdal.GetDriverByName("GTiff")
+        outdata = driver.Create(OUTPUT+'Waterclass_WET_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
+        geot=dwt.GetGeoTransform()
+        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+        outdata.SetGeoTransform(geot)##sets same geotransform as input
+        outdata.SetProjection(dwt.GetProjection())##sets same projection as input
+        outdata.GetRasterBand(1).WriteArray(Class)
+        outdata.FlushCache() ##saves to disk!!
+        outdata = None
+    else:
+        print('skipping WET as it already exist locally. If you want to reprocess, please delete')
+    if len(list_files(OUTPUT,'Waterclass_DRY_'+name+'.tif'))==0:
+        Class = Chl_CONNECT(DRYA,sensor='MSI').Class
+        print ('Processing DRY')
+        driver = gdal.GetDriverByName("GTiff")
+        outdata = driver.Create(OUTPUT+'Waterclass_DRY_'+name+'.tif', 5490, 5490, 1, gdal.GDT_UInt16) #UInt16
+        dwt=gdal.Open(monthdicW[month][0], gdal.GA_ReadOnly)
+        geot=dwt.GetGeoTransform()
+        geot=(geot[0],geot[1]*2,geot[2],geot[3],geot[4],geot[5]*2)
+        outdata.SetGeoTransform(geot)##sets same geotransform as input
+        outdata.GetRasterBand(1).WriteArray(Class)
+        outdata.FlushCache() ##saves to disk!!
+        outdata = None
+    else:
+        print('skipping DRY as it already exist locally. If you want to reprocess, please delete')
