@@ -106,7 +106,7 @@ if __name__=='__main__':
                         help="Entry (str): Tiles to treat"
                         ,default=None)
         (options, args) = parser.parse_args()
-        TILENAME = options.tile
+        TILENAME = [options.tile]
 
 BANDS = meta.SENSOR_BANDS['MSI-SOLID']
 
