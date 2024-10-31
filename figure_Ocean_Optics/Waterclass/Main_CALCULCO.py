@@ -48,8 +48,8 @@ from operator import add
 # TILENAME=['T48PWS']
 INPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_Polymer_20m/'
 WIPE_INPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/RAW/'
-OUTPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/Figure_OO/Class_OUT/'
-
+OUTPUT='/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/Figure_OO/CLass_OUT_2/'
+convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
 def zerooone(x):
     if x==0:
         r=False
@@ -136,7 +136,6 @@ for name in TILENAME: # For all listed TILENAME
             monthdicW[Path(WPE[0]).name[15:17]].append(WPE[0])
             print (Path(WPE[0]).name)
     data={}
-    convert=['Rw443','Rw490','Rw560','Rw665','Rw705']
     for month in monthdic : #For all month
         t=0
         print('number of elem to treat this month : '+str(len(monthdic[month])))
@@ -166,7 +165,8 @@ for name in TILENAME: # For all listed TILENAME
             dww=np.squeeze(dww) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
             dww=dww.astype(bool) #Convert to mask True or False to apply
             # bitmask = gdal.Open(ds.GetSubDatasets()[2][0], gdal.GA_ReadOnly).ReadAsArray() #Polymer open
-            bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
+            # bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
+            bitmask = np.vectorize(bitmaskp)(bitmask)
             # bitmask = np.vectorize(bitmaskp)(bitmask) #Convert bitmask to True or False, and flip it to correspond WiPE projection
             bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
             if t==0:
