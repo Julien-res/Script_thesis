@@ -79,6 +79,13 @@ def polymer_zero(x):
         r=x
     return r
 
+def fiveper(x):
+    if x <5:
+        r=0
+    else:
+        r=x
+    return r
+
 def bitmaskp(x):
     if x in [1,2,4,8,16,32,64,128,512]:
         r=False
@@ -199,7 +206,6 @@ for name in TILENAME: # For all listed TILENAME
         if t != len(monthdic[month]):
             print('ERROR, LESS MONTH TREATED THAN EXPECTED, CHECK CODE')
             sys.exit(-1)
-        
         print ('Processing ' + month + ' month')
         # Classification
         if month in ('01','02','03','04','05','12'):
@@ -251,7 +257,8 @@ for name in TILENAME: # For all listed TILENAME
             CONTROLE=0
         else:
             print('skipping one month as it already exist locally. If you want to reprocess, please delete')
-
+    DRYNUM=np.vectorize(fiveper)(DRYNUM) #remove pixel with less than 5 occurence
+    WETNUM=np.vectorize(fiveper)(WETNUM) #remove pixel with less than 5 occurence
     if len(list_files(OUTPUT,'Waterclass_WET_'+name+'.tif'))==0:
         DRYA=[]
         WETA=[]
