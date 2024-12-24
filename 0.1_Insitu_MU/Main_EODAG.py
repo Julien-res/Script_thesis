@@ -26,18 +26,17 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='peps'
+services='geodes'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
-DATA="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/DATA_TO_MU_2.csv"
-
-file_path = "/mnt/c/Users/Julien Masson/Downloads/heure_to_utc_2.xlsx"  # Remplacez par le chemin réel de votre fichier
-data = pd.read_excel(file_path)
+DATA = "/mnt/c/Users/Julien Masson/Downloads/heure_to_utc_2.xlsx"
+DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.xlsx"
+Dat = pd.read_excel(DATA)
 #Setting download location ###########################################################################
 
-
-Dat=pd.read_csv(DATA,parse_dates=['Date'])
+Dat = Dat[Dat['Depth (m)'] <= 5]
+Dat = Dat[Dat['BOOL_POC'] != 0]
 
 if LOCAL is None:
     if not os.path.isdir('eodag_workspace'):
