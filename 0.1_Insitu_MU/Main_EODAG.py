@@ -30,11 +30,10 @@ services='geodes'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
-DATA = "/mnt/c/Users/Julien Masson/Downloads/heure_to_utc_2.xlsx"
-DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.xlsx"
+DATA = "/mnt/c/Travail/DATA_AGGREGATION/DATA_POC_PON_SPM.xlsx"
+# DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.xlsx"
 Dat = pd.read_excel(DATA)
-#Setting download location ###########################################################################
-
+#Setting download location #################################################
 Dat = Dat[Dat['Depth (m)'] <= 5]
 Dat = Dat[Dat['BOOL_POC'] != 0]
 
@@ -83,6 +82,4 @@ for p in range(0,len(Dat)-1,1):
                     dag.download_all(Offline[i:i+1],wait=1,timeout=20)
                 else:
                     Offline[i].download(wait=1,timeout=20)
-
         ###########################################################################
-
