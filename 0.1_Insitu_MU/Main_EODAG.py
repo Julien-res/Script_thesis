@@ -26,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='geodes'
+services='peps'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
