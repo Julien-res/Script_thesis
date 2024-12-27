@@ -32,7 +32,7 @@ OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
 DATA = "/mnt/c/Travail/DATA_AGGREGATION/DATA_POC_PON_SPM.csv"
 # DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.csv"
-Dat = pd.read_excel(DATA)
+Dat = pd.read_csv(DATA)
 #Setting download location #################################################
 Dat = Dat[Dat['Depth (m)'] <= 5]
 Dat = Dat[Dat['BOOL_POC'] != 0]
