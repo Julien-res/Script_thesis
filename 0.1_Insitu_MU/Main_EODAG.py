@@ -55,7 +55,8 @@ if not os.path.exists(src_path):
 setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas
-Dat['MU']=0
+df=Dat
+Df['MU']=0
 for p in range(0,len(Dat)-1,1):
     X=Dat.loc[p, 'Lon']
     Y=Dat.loc[p, 'Lat']
@@ -82,4 +83,5 @@ for p in range(0,len(Dat)-1,1):
                     dag.download_all(Offline[i:i+1],wait=1,timeout=20)
                 else:
                     Offline[i].download(wait=1,timeout=20)
+df.to_csv(LOCAL)
         ###########################################################################
