@@ -30,13 +30,13 @@ services='geodes'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
-DATA = "/mnt/c/Travail/DATA_AGGREGATION/DATA_POC_PON_SPM.xlsx"
-# DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.xlsx"
+DATA = "/mnt/c/Travail/DATA_AGGREGATION/DATA_POC_PON_SPM.csv"
+# DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.csv"
 Dat = pd.read_excel(DATA)
 #Setting download location #################################################
 Dat = Dat[Dat['Depth (m)'] <= 5]
 Dat = Dat[Dat['BOOL_POC'] != 0]
-
+Dat = Dat.dropna(subset=['Hour (UTC)'])
 if LOCAL is None:
     if not os.path.isdir('eodag_workspace'):
         os.mkdir('eodag_workspace')
@@ -56,8 +56,7 @@ setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas
 df=Dat
-# df['dateheure'] = pd.to_datetime(str(df['Date']) + ' ' + str(df['Hour']), format='%Y-%m-%d %H:%M:%S')
-df['dateheure'] = pd.to_datetime(df['Date'].dt.strftime('%Y-%m-%d') + ' ' + df['Heure'])
+df['dateheure'] = pd.to_datetime(df['Date (UTC)'])+pd.to_timedelta(df['Hour (UTC)'])
 df['MU']=0
 for p in range(0,len(Dat)-1,1):
     X=Dat.loc[p, 'Lon']
