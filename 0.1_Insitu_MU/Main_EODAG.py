@@ -56,7 +56,7 @@ setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas
 df=Dat
-Df['MU']=0
+df['MU']=0
 for p in range(0,len(Dat)-1,1):
     X=Dat.loc[p, 'Lon']
     Y=Dat.loc[p, 'Lat']
