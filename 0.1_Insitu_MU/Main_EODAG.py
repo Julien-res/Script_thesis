@@ -26,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='geodes'
+services='peps'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
@@ -54,7 +54,7 @@ if not os.path.exists(src_path):
 ###########################################################################
 setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
-dag.set_provider(services) #What is the provider of datas
+dag.set_preferred_provider(services) #What is the provider of datas
 df=Dat
 df['dateheure'] = pd.to_datetime(df['Date (UTC)'])+pd.to_timedelta(df['Hour (UTC)'])
 df['MU']=0
@@ -63,7 +63,7 @@ for p in range(0,len(Dat)-1,1):
     Y=Dat.loc[p, 'Lat']
     starts=Dat.loc[p, 'dateheure']-pd.Timedelta(hours=1)
     ends=Dat.loc[p, 'dateheure']+pd.Timedelta(hours=1)
-    Online,Offline=EODAG_search(download_path=localp,
+    Online,Offline=dag.search(download_path=localp,
                                 productTypes='S2_MSI_L1C',
                                 geom=f'POINT ({X} {Y})',
                                 yaml_path=yaml_path,
