@@ -71,7 +71,6 @@ Returns:
                 lines = [line.rstrip() for line in f]
                 usrnm=lines[0]
                 passwd=lines[1]
-                apkey=lines[2]
                 if usrnm.endswith('\n'):
                     usrnm = usrnm[:-1]
                 if passwd.endswith('\n'):
