@@ -26,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='peps'
+services='geodes'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
@@ -66,7 +66,10 @@ for p in range(0,len(Dat)-1,1):
     Online,Offline=EODAG_search(download_path=localp,
                                 productTypes='S2_MSI_L1C',
                                 geom=f'POINT ({X} {Y})',
-                                yaml_path=yaml_path,starts=str(starts),ends=str(ends))
+                                yaml_path=yaml_path,
+                                starts=str(starts),
+                                ends=str(ends),
+                                provider=services)
     if len(Online)>0 or len(Offline)>0:
         df.at[p, 'MU'] = 1
         print('At least one possible Match-up using Sentinel-2')
