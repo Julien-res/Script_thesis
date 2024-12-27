@@ -33,10 +33,13 @@ Returns:
             lines = [line.rstrip() for line in f]
             usrnm=lines[0]
             passwd=lines[1]
+            apkey=lines[2]
             if usrnm.endswith('\n'):
                 usrnm = usrnm[:-1]
             if passwd.endswith('\n'):
                 passwd = passwd[:-1]
+            if apkey.endswith('\n'):
+                apkey = apkey[:-1]
     except:
         print("Error with .credential file, check if you made it right boss!")
         sys.exit(-2)
@@ -52,6 +55,7 @@ Returns:
         credentials:
             username: {usrnm}
             password: {passwd}
+            apikey: {apkey}
     """
     if service != 'creodias':
         with open(yaml_path, "w") as f_yml:
