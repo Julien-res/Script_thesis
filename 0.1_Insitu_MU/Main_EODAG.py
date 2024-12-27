@@ -56,12 +56,14 @@ setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas
 df=Dat
+# df['dateheure'] = pd.to_datetime(str(df['Date']) + ' ' + str(df['Hour']), format='%Y-%m-%d %H:%M:%S')
+df['dateheure'] = pd.to_datetime(df['Date'].dt.strftime('%Y-%m-%d') + ' ' + df['Heure'])
 df['MU']=0
 for p in range(0,len(Dat)-1,1):
     X=Dat.loc[p, 'Lon']
     Y=Dat.loc[p, 'Lat']
-    starts=Dat.loc[p, 'Date']-pd.Timedelta(days=1)
-    ends=Dat.loc[p, 'Date']+pd.Timedelta(days=1)
+    starts=Dat.loc[p, 'dateheure']-pd.Timedelta(hours=1)
+    ends=Dat.loc[p, 'dateheure']+pd.Timedelta(hours=1)
     Online,Offline=EODAG_search(download_path=localp,
                                 productTypes='S2_MSI_L1C',
                                 geom=f'POINT ({X} {Y})',
@@ -70,7 +72,7 @@ for p in range(0,len(Dat)-1,1):
         df.at[p, 'MU'] = 1
         print('At least one possible Match-up using Sentinel-2')
 
-        for i in range(0,len(online_search_results),2):
+        for i in range(0,len(Online),2):
             if i<len(Online):
                 dag.download_all(Online[i:i+1])
             else:
