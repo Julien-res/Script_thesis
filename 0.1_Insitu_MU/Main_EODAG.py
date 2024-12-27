@@ -63,13 +63,15 @@ for p in range(0,len(Dat)-1,1):
     Y=Dat.loc[p, 'Lat']
     starts=Dat.loc[p, 'dateheure']-pd.Timedelta(hours=1)
     ends=Dat.loc[p, 'dateheure']+pd.Timedelta(hours=1)
-    Online,Offline=dag.search(download_path=localp,
+    Results=dag.search(download_path=localp,
                                 productTypes='S2_MSI_L1C',
                                 geom=f'POINT ({X} {Y})',
                                 yaml_path=yaml_path,
                                 starts=str(starts),
                                 ends=str(ends),
                                 provider=services)
+    Online = Results.filter_property(storageStatus="ONLINE")
+    Offline = Results.filter_property(storageStatus="OFFLINE")
     if len(Online)>0 or len(Offline)>0:
         df.at[p, 'MU'] = 1
         print('At least one possible Match-up using Sentinel-2')
@@ -79,11 +81,11 @@ for p in range(0,len(Dat)-1,1):
                 dag.download_all(Online[i:i+1])
             else:
                 Online[i].download()
-        if len(Offline)<2:
+        if len(Online)<2:
             dag.download_all(Offline,wait=1,timeout=20)
         else:
             for i in range(0,len(Offline),2):
-                if i<len(products):
+                if i<len(Offline):
                     dag.download_all(Offline[i:i+1],wait=1,timeout=20)
                 else:
                     Offline[i].download(wait=1,timeout=20)
