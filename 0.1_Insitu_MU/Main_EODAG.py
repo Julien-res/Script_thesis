@@ -54,7 +54,7 @@ if not os.path.exists(src_path):
 ###########################################################################
 setup_logging(2) #Startup logging
 dag = EODataAccessGateway(yaml_path)
-dag.set_preferred_provider(services) #What is the provider of datas
+dag.set_provider(services) #What is the provider of datas
 df=Dat
 df['dateheure'] = pd.to_datetime(df['Date (UTC)'])+pd.to_timedelta(df['Hour (UTC)'])
 df['MU']=0
