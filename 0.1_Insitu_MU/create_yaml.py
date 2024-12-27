@@ -27,45 +27,80 @@ Returns:
     import os
     import sys
     ###############################################
-    filename=os.path.join(credential,(service+'.credential'))
-    try:
-        with open(filename) as f:
-            lines = [line.rstrip() for line in f]
-            usrnm=lines[0]
-            passwd=lines[1]
-            apkey=lines[2]
-            if usrnm.endswith('\n'):
-                usrnm = usrnm[:-1]
-            if passwd.endswith('\n'):
-                passwd = passwd[:-1]
-            if apkey.endswith('\n'):
-                apkey = apkey[:-1]
-    except:
-        print("Error with .credential file, check if you made it right boss!")
-        sys.exit(-2)
+    if service=='geodes':
+        filename=os.path.join(credential,(service+'.credential'))
+        try:
+            with open(filename) as f:
+                lines = [line.rstrip() for line in f]
+                usrnm=lines[0]
+                passwd=lines[1]
+                apkey=lines[2]
+                if usrnm.endswith('\n'):
+                    usrnm = usrnm[:-1]
+                if passwd.endswith('\n'):
+                    passwd = passwd[:-1]
+                if apkey.endswith('\n'):
+                    apkey = apkey[:-1]
+        except:
+            print("Error with .credential file, check if you made it right boss!")
+            sys.exit(-2)
 
-    # Save the PEPS configuration file. ###############################################
-    yaml_path=os.path.join(format(os.getcwd()), 'eodag_download_conf.yml')
-    yaml_content = service+':'+f"""
-    download:
-        outputs_prefix: '{dpath}'
-        extract: true
-        delete_archive: true
-    auth:
-        credentials:
-            username: {usrnm}
-            password: {passwd}
-            apikey: {apkey}
-    """
-    if service != 'creodias':
-        with open(yaml_path, "w") as f_yml:
-            f_yml.write(yaml_content.strip())
-        os.chmod(yaml_path, 0o0600)
-    else :
-
+        # Save the PEPS configuration file. ###############################################
+        yaml_path=os.path.join(format(os.getcwd()), 'eodag_download_conf.yml')
+        yaml_content = service+':'+f"""
+        download:
+            outputs_prefix: '{dpath}'
+            extract: true
+            delete_archive: true
+        auth:
+            credentials:
+                username: {usrnm}
+                password: {passwd}
+                apikey: {apkey}
+        """
         with open(yaml_path, "a") as f_yml:
             yaml_content=yaml_content+f"""        totp: {totp}"""
             f_yml.write('\n')
             f_yml.write(yaml_content.strip())
         os.chmod(yaml_path, 0o0600)
-    return yaml_path
+        return yaml_path
+    else:
+        filename=os.path.join(credential,(service+'.credential'))
+        try:
+            with open(filename) as f:
+                lines = [line.rstrip() for line in f]
+                usrnm=lines[0]
+                passwd=lines[1]
+                apkey=lines[2]
+                if usrnm.endswith('\n'):
+                    usrnm = usrnm[:-1]
+                if passwd.endswith('\n'):
+                    passwd = passwd[:-1]
+        except:
+            print("Error with .credential file, check if you made it right boss!")
+            sys.exit(-2)
+
+        # Save the PEPS configuration file. ###############################################
+        yaml_path=os.path.join(format(os.getcwd()), 'eodag_download_conf.yml')
+        yaml_content = service+':'+f"""
+        download:
+            outputs_prefix: '{dpath}'
+            extract: true
+            delete_archive: true
+        auth:
+            credentials:
+                username: {usrnm}
+                password: {passwd}
+        """
+        if service != 'creodias':
+            with open(yaml_path, "w") as f_yml:
+                f_yml.write(yaml_content.strip())
+            os.chmod(yaml_path, 0o0600)
+        else :
+
+            with open(yaml_path, "a") as f_yml:
+                yaml_content=yaml_content+f"""        totp: {totp}"""
+                f_yml.write('\n')
+                f_yml.write(yaml_content.strip())
+            os.chmod(yaml_path, 0o0600)
+        return yaml_path
