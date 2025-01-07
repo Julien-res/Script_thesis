@@ -26,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='cop_dataspace'
+services='peps'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
@@ -43,7 +43,7 @@ if LOCAL is None:
         os.chdir(os.path.join(os.getcwd(),'eodag_workspace'))
         dpath=os.getcwd()
 else :
-    localp=LOCAL
+    localp=OUTPUT
 
 yaml_path=create_yaml(credential=CREDENTIAL,service=services,dpath=localp,totp=None)
 #create_yaml(credential=options.credential,service='creodias',dpath=localp,totp=options.totp)
@@ -52,24 +52,28 @@ src_path=os.path.join(localp,'Search_results')
 if not os.path.exists(src_path):
     os.mkdir(src_path)
 ###########################################################################
-setup_logging(2) #Startup logging
+setup_logging(3) #Startup logging
 dag = EODataAccessGateway(yaml_path)
 dag.set_preferred_provider(services) #What is the provider of datas
 df=Dat
 df['dateheure'] = pd.to_datetime(df['Date (UTC)'])+pd.to_timedelta(df['Hour (UTC)'])
 df['MU']=0
+df.reset_index(drop=True, inplace=True)
 for p in range(0,len(Dat)-1,1):
-    X=Dat.loc[p, 'Lon']
-    Y=Dat.loc[p, 'Lat']
-    starts=Dat.loc[p, 'dateheure']-pd.Timedelta(hours=1)
-    ends=Dat.loc[p, 'dateheure']+pd.Timedelta(hours=1)
+    X=df.loc[p, 'Lon']
+    Y=df.loc[p, 'Lat']
+    starts=df.loc[p, 'dateheure']-pd.Timedelta(days=1)
+    starts=str(starts.strftime('%Y-%m-%dT%H:%M:%S'))
+    ends=df.loc[p, 'dateheure']+pd.Timedelta(days=1)
+    ends=str(ends.strftime('%Y-%m-%dT%H:%M:%S'))
     Results=dag.search(download_path=localp,
-                                productTypes='S2_MSI_L1C',
+                                productType="S2_MSI_L1C",
                                 geom=f'POINT ({X} {Y})',
                                 yaml_path=yaml_path,
-                                starts=str(starts),
-                                ends=str(ends),
-                                provider=services)
+                                start=starts,
+                                end=ends,
+                                provider=services,
+                                count=True)
     Online = Results.filter_property(storageStatus="ONLINE")
     Offline = Results.filter_property(storageStatus="OFFLINE")
     if len(Online)>0 or len(Offline)>0:
@@ -78,16 +82,16 @@ for p in range(0,len(Dat)-1,1):
 
         for i in range(0,len(Online),2):
             if i<len(Online):
-                dag.download_all(Online[i:i+1])
+                dag.download_all(Online[i:i+1],output_dir=OUTPUT)
             else:
                 Online[i].download()
         if len(Online)<2:
-            dag.download_all(Offline,wait=1,timeout=20)
+            dag.download_all(Offline,wait=1,timeout=20,output_dir=OUTPUT)
         else:
             for i in range(0,len(Offline),2):
                 if i<len(Offline):
-                    dag.download_all(Offline[i:i+1],wait=1,timeout=20)
+                    dag.download_all(Offline[i:i+1],wait=1,timeout=20,output_dir=OUTPUT)
                 else:
-                    Offline[i].download(wait=1,timeout=20)
+                    Offline[i].download(wait=1,timeout=20,output_dir=OUTPUT)
 df.to_csv(LOCAL)
         ###########################################################################
