@@ -155,7 +155,8 @@ for name in TILENAME: # For all listed TILENAME
                 # Mask ==================
                 dww=np.squeeze(dww) #Convert np.uint8 (0 to 255) to np.int64 and remove dim 1
                 dww=dww.astype(bool) #Convert to mask True or False to apply
-                bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
+                # bitmask = np.vectorize(bitmaskp)(np.flip(bitmask,axis=0)) #Convert bitmask to True or False, and flip it to correspond WiPE projection
+                bitmask = np.vectorize(bitmaskp)(bitmask)
                 bitmask = np.where(dww,bitmask,False) #Fusion bitmask and WiPE to save compute time
                 dww=None
                 CONTROLE=0

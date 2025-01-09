@@ -103,7 +103,7 @@ Acolite also need earthdata credential. The procedure is the same as Polymer.
 
 ```bash
 cd ~
-curl -O http://step.esa.int/downloads/9.0/installers/esa-snap_all_unix_9_0_0.sh && chmod 755 esa-snap_all_unix_9_0_0.sh && bash esa-snap_all_unix_9_0_0.sh && rm esa-snap_all_unix_9_0_0.sh
+curl -O https://download.esa.int/step/snap/11.0/installers/esa-snap_all_linux-11.0.0.sh && chmod 755 esa-snap_all_linux-11.0.0.sh && bash esa-snap_all_linux-11.0.0.sh -c && rm esa-snap_all_linux-11.0.0.sh
     [o, Enter]
     [1, Enter]
     [Enter]
