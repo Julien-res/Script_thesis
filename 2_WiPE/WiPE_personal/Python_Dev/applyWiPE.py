@@ -10,12 +10,12 @@ def applyWiPE(bands):
         if bands[i].shape != bands[i + 1].shape:
             raise ValueError("Toutes les bandes doivent avoir les mêmes dimensions.")
     # Initialisation du masque
-    mask = np.ones_like(bands[2], dtype=np.uint64)
+    mask = np.ones_like(bands[2], dtype=np.uint16)
 
     # Identification des pixels où les bandes 2, 3, et 4 sont toutes à 255
-    invalid_pixels = (bands[0] == 255) & (bands[1] == 255) & (bands[2] == 255)
+    invalid_pixels = (bands[0] == 0) & (bands[1] == 0) & (bands[2] == 0)
 
-    # Remplacement des pixels problématiques par np.nan
+    # Remplacement des pixels problématiques par 0
     for i in range(3):  # Seulement pour les bandes 2, 3, et 4
         bands[i] = np.where(invalid_pixels, 0, bands[i])
 

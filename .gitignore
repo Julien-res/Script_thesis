@@ -15,3 +15,10 @@ Ancillary/.urs_cookies
 /3_CA/WiPE_before_or_after/Sunglint_retrieval_test/Data
 *.png
 *.tif
+0.1_Insitu_MU/DATA_POC_PON_SPM.csv
+0.1_Insitu_MU/LOCAL/DATA_TO_MU_2.csv
+0.1_Insitu_MU/MREN/DATA_POC_PON_SPM.csv
+0.1_Insitu_MU/MREN/DATA_TO_MU_2.csv
+*.csv
+*.xlsx
+0.1_Insitu_MU/DATA_POC_PON_SPM.csv

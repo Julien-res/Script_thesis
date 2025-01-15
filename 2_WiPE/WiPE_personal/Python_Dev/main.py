@@ -1,15 +1,17 @@
 import sys
 import argparse
+
 from rayleigh_correction import apply_rayleigh_correction
-from apply WiPE import applyWiPE
+from applyWiPE import applyWiPE
 os.chdir('/home/julien/')
-import esa_snappy
 import rasterio
 import numpy as np
+import rasterio
 from rasterio.merge import merge
 from rasterio.plot import reshape_as_raster, reshape_as_image
 from rasterio.transform import from_origin
 from glob import glob
+
 parser = argparse.ArgumentParser(description="Appliquer une correction de Rayleigh à une image Sentinel-2")
 parser.add_argument("output", help="Chemin vers le fichier de sortie corrigé", default="stdout")
 requiredNamed = parser.add_argument_group('Arguments requis')
@@ -19,13 +21,24 @@ TEST="/mnt/c/Travail/Script/S2A_MSIL1C_20231216T032131_N0510_R118_T48PXQ_2023121
 
 def load_bands(filepaths):
     """Charge les bandes Sentinel-2 depuis les fichiers spécifiés."""
+        band_filepaths = [
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B01.jp2'))[0] ,  # Bande 2
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B03.jp2'))[0],  # Bande 3
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B04.jp2'))[0],  # Bande 4
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B07.jp2'))[0],  # Bande 7
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B10.jp2'))[0], # Bande 10
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B11.jp2'))[0], # Bande 11
+        glob(os.path.join(filepaths,'GRANULE/**/IMG_DATA/*B12.jp2'))[0]  # Bande 12
+    ]
     bands = []
     profile = None
-
-    for filepath in filepaths:
+    iter=0
+    for filepath in band_filepaths:
         with rasterio.open(filepath) as src:
-            if profile is None:
-                profile = src.profile
+            if iter==0:
+                iter=1
+                if profile is None:
+                    profile = src.profile
             bands.append(src.read(1))
 
     return np.array(bands), profile
@@ -33,12 +46,12 @@ def load_bands(filepaths):
 def save_composite(output_path, composite, profile):
     """Enregistre le mask tout en conservant le géoréférencement."""
     profile.update(
-        dtype='int64',
+        dtype='uint16',
         count=1
     )
 
     with rasterio.open(output_path, 'w', **profile) as dst:
-        dst.write(composite.astype('float32'), 1)
+        dst.write(composite.astype('uint16'), 1)
 
 # Point d'entrée du script
 if __name__ == "__main__":
@@ -47,25 +60,11 @@ if __name__ == "__main__":
         Output=os.curdir+'/WiPE_Workspace'
     else:
         Output=args.output
-    
-    apply_rayleigh_correction(args.input, args.output)
-    AJOUTER UN RE CALCUL DES RESOLUTIONS SELON LES BANDES (2,3,4=10m)(7,11,12=20m)(10=60m)
-    # Chemins vers les fichiers des bandes Sentinel-2
-    
-    band_filepaths = [
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B01.jp2')[0] ,  # Bande 2
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B03.jp2')[0],  # Bande 3
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B04.jp2')[0],  # Bande 4
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B07.jp2')[0],  # Bande 7
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B10.jp2')[0], # Bande 10
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B11.jp2')[0], # Bande 11
-        glob(TEST+'/GRANULE/**/IMG_DATA/*B12.jp2')[0]  # Bande 12
-    ]
-    # Charger les bandes
-    bands, profile = load_bands(band_filepaths)
 
-
-
+    corrected_bands=apply_rayleigh_correction(args.input,10)
+    # # Charger les bandes
+    # bands, profile = load_bands(band_filepaths)
+    LIEN A FAIRE ENTRE CORRECTED BANDS(DICTIONNAIRE) ET BANDS (LIST)
     mask_image = applyWiPE(bands)
 
     # Enregistrer l'image composite
