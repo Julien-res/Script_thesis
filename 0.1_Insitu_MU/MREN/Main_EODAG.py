@@ -29,7 +29,7 @@ import pytz
 services='peps'
 CREDENTIAL="/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/Credential"
 OUTPUT="/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/Match_up/"
-LOCAL="/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/Output"
+LOCAL="/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/Output/"
 DATA = "/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/DATA_POC_PON_SPM.csv"
 # DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.csv"
 Dat = pd.read_csv(DATA)
@@ -93,5 +93,5 @@ for p in range(0,len(Dat)-1,1):
                     dag.download_all(Offline[i:i+1],wait=1,timeout=20,output_dir=OUTPUT)
                 else:
                     Offline[i].download(wait=1,timeout=20,output_dir=OUTPUT)
-df.to_csv(LOCAL)
+df.to_csv(path_or_buf=LOCAL+'OUTPUT_RESULT.csv')
         ###########################################################################
