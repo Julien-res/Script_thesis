@@ -27,7 +27,7 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     
     resolutions = {
     "B2": 10, "B3": 10, "B4": 10,
-    "B7": 20,"B10": 60, "B11": 20, "B12": 20
+    "B7": 20, "B10": 60, "B11": 20, "B12": 20
     }
     res = resolutions.get(band, 60)
     # Rééchantillonnage des bandes à target_res
@@ -43,10 +43,11 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
         parameters.put('s2MsiTargetResolution', Integer(res))
     else:
         print("Méthode de rééchantillonnage : Autre")
-        parameters.put('s2MsiTargetResolution', Integer(60 if res == 60 else 20))
+        parameters.put('s2MsiTargetResolution', Integer(20))
 
     # Appliquer de la correction
     print("Application de la correction de Rayleigh...")
+    # if res!=60:
     try:
         corrected_product = GPF.createProduct("RayleighCorrection", parameters, product)
     except RuntimeError as e:
@@ -60,12 +61,17 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
         resample_params.put('upsampling', 'Nearest')
         resample_params.put('downsampling', 'Mean')
         resample_params.put('targetResolution', Integer(target_res))
+        # if res!=60:
         corrected_product = GPF.createProduct("Resample", resample_params, corrected_product)
-        
+        # else:
+        #     corrected_product = GPF.createProduct("Resample", resample_params, product)
+    # if res!=60:
+    corrected_band_name = f"rBRR_{band}"
+    # else:
+    # corrected_band_name = band
     print("Correction et Rééchantillonnage terminés.")
 
     # Convertir les bandes corrigées en arrays numpy
-    corrected_band_name = f"rBRR_{band}"
     if corrected_band_name not in corrected_product.getBandNames():
         raise RuntimeError(f"Erreur : la bande corrigée '{corrected_band_name}' n'est pas disponible après la correction.")
 
