@@ -22,3 +22,5 @@ Ancillary/.urs_cookies
 *.csv
 *.xlsx
 0.1_Insitu_MU/DATA_POC_PON_SPM.csv
+*.data
+*.new
