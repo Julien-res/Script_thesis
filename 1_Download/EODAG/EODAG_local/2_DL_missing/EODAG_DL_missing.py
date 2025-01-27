@@ -196,7 +196,7 @@ test4.to_csv(path_or_buf=os.path.join(path,f'Missing_data_{services}_bymonth.csv
 
 #Search in Service database ####################################
 
-if services in ('peps','theia'):
+if services in ('peps','theia','geodes'):
     for i in range(0,len(test4)):
         starts=str(test4['Date'][i]-pd.DateOffset(1))[0:10]
         ends=str(test4['Date'][i]+pd.DateOffset(1))[0:10]

@@ -12,7 +12,7 @@ def applyWiPE(bands):
     
     # Initialize the mask
     mask = np.ones_like(bands[2], dtype=np.uint16)
-    mask[np.isnan(bands[0]) | np.isnan(bands[1]) | np.isnan(bands[2]) | np.isnan(bands[3]) | (bands[3] == 0)] = 0
+    mask[np.isnan(bands[0]) | np.isnan(bands[1]) | np.isnan(bands[2]) | np.isnan(bands[3])] = 0
 
     # Step 1: Filtering with conditions
     print("Step 1")

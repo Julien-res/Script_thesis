@@ -7,7 +7,7 @@ Created on Mon Jan 22 11:55:59 2024
 """
 
 import os
-os.chdir("/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/")
+os.chdir("/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/LOCAL/")
 import calendar
 import sys
 import optparse
@@ -26,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 import pytz
 
-services='peps'
+services='geodes'
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/1_Download/EODAG/Credential"
 OUTPUT="/mnt/d/DATA/S2A_L1C/MATCH-UP"
 LOCAL="/mnt/c/Travail/Script/Script_thesis/0.1_Insitu_MU/Output"
@@ -67,7 +67,7 @@ for p in range(0,len(Dat)-1,1):
     ends=df.loc[p, 'dateheure']+pd.Timedelta(days=1)
     ends=str(ends.strftime('%Y-%m-%dT%H:%M:%S'))
     Results=dag.search(download_path=localp,
-                                productType="S2_MSI_L1C",
+                                name="S2_MSI_L1C",
                                 geom=f'POINT ({X} {Y})',
                                 yaml_path=yaml_path,
                                 start=starts,

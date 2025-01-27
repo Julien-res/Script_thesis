@@ -107,10 +107,10 @@ if __name__=="__main__":
             setup_logging(2) #Startup logging
             dag = EODataAccessGateway(yaml_path)
             dag.set_preferred_provider(services) #What is the provider of datas
-            Online,Offline=EODAG_search(download_path=localp
-                                        ,productTypes='S2_MSI_L1C',
-                                        tileIdentifiers=options.tile_Identifier
-                                        ,yaml_path=yaml_path,starts=starts,ends=ends)
+            Online,Offline=EODAG_search(download_path=localp,
+                                        productTypes='S2_MSI_L1C',
+                                        tileIdentifiers=options.tile_Identifier,
+                                        yaml_path=yaml_path,starts=starts,ends=ends)
             for i in range(0,len(Online)):
                 Online[i].download()
             for i in range(0,len(Offline)):
