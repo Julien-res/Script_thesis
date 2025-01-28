@@ -24,3 +24,5 @@ Ancillary/.urs_cookies
 0.1_Insitu_MU/DATA_POC_PON_SPM.csv
 *.data
 *.new
+/1_Download/EODAG/TEST/.downloaded
+/1_Download/EODAG/TEST
