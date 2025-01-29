@@ -41,8 +41,8 @@ def create_yaml(credential=None, service='peps', dpath=None, totp=None):
         {service}:
             download:
                 outputs_prefix: '{dpath}'
-                extract: true
-                delete_archive: true
+                extract: false
+                delete_archive: false
             auth:
                 credentials:
                     username: {usrnm}

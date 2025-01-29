@@ -1,0 +1,6 @@
+eodag
+shapely
+argparse
+calendar
+glob2
+pyyaml

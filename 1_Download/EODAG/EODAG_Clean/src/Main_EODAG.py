@@ -18,20 +18,32 @@ from datetime import datetime
 import glob
 import re
 
-def find_s2_files(directory):
+
+
+def find_s2_files(directory, recursive=True):
+    if directory is None:
+        return None
     patterns = [f"S2{x}_MSIL1C_*.{ext}" for x in ["A", "B"] for ext in ["SAFE", "SAFE.bz2", "zip"]]
     matched_files = []
     for pattern in patterns:
-        matched_files.extend(glob.glob(os.path.join(directory, pattern)))
+        if recursive:
+            matched_files.extend(
+                glob.glob(os.path.join(directory, "**", pattern), recursive=True)
+            )
+        else:
+            matched_files.extend(glob.glob(os.path.join(directory, pattern)))
     extracted = []
+    mis = 0
     for fname in matched_files:
         match = re.search(r"_(\d{8})T.*?_T(\d+[A-Z]+)_", os.path.basename(fname))
         if match:
             if os.path.getsize(fname) / 1024 >= 50000:
                 extracted.append((match.group(1), match.group(2)))
             else:
-                print(f"File {fname} is smaller than 50000KB and will be re-downloaded.")
-    print('extracted:', extracted)
+                if mis == 0:
+                    print(f"At least one file is smaller than 50000KB and will be re-downloaded.")
+                    mis = 1
+    print('extracted: ', len(extracted), ' files extracted out of', len(matched_files))
     return extracted
 
 def parse_arguments():
@@ -41,8 +53,10 @@ def parse_arguments():
     requiredNamed.add_argument("-t", "--tile", type=str, dest='tile', help="Desired tile(s) to download (e.g. 31TFJ)", nargs='+', required=True)
     requiredNamed.add_argument("-c", "--credential", type=str, dest='cred', help="Path to credential file (if no provider=>geodes)", required=True)
     parser.add_argument("-o", "--output", type=str, dest='output', help="Path where to output downloaded files (default: stdout)", default=None)
-    parser.add_argument("-s", "--service", type=str, dest='serv', help="Provider where to download data", default='peps')
+    parser.add_argument("-s", "--service", type=str, dest='serv', help="Provider where to download data", default='geodes')
     parser.add_argument("-m", "--month", type=int, dest='month', help="Month of the image")
+    parser.add_argument("-k", "--check", type=str, dest='check', help="Optional path to check for already downloaded files", default=None)
+    parser.add_argument("-r", "--recursive", dest='recursive', type=lambda x: (str(x).lower() == 'true'), help="Search subdirectories recursively (default: True)", default="true")
     return parser.parse_args()
 
 def setup_download_path(output):
@@ -81,9 +95,30 @@ def filter_downloads(products, already_downloaded, tile):
     return filtered
 
 if __name__ == "__main__":
+    print ('Launching')
     args = parse_arguments()
+    if args.check:
+        check = args.check
+    else:
+        check = args.output
     localp = setup_download_path(args.output)
-    already_downloaded = find_s2_files(localp)
+    print(f'Local path: {localp}')
+    print(f'Provider: {args.serv} (default: geodes)' if args.serv == 'geodes' else f'Provider: {args.serv}')
+    print(f'Credential: {args.cred}')
+    print(f'Tile: {args.tile}')
+    print(f'Year: {args.year}')
+    print(f'Month: {args.month}' if args.month else 'Month: not specified')
+    print(f'Recursive: {args.recursive} (default: True)' if args.recursive else f'Recursive: {args.recursive}')
+    print(f'Check: {args.check}' if args.check else 'Check: not specified')
+    print(f'Output: {args.output}' if args.output else 'Output: not specified')
+    print('Parsing arguments done')
+    print('Searching for already downloaded files...')
+    already_downloaded = find_s2_files(check, args.recursive)
+    if not already_downloaded:
+        print('No files found in the directory')
+    else:
+        print('{} found in the directory'.format(len(already_downloaded)))
+    print('Starting EODAG...')
     yaml_path = create_yaml(credential=args.cred, service=args.serv, dpath=localp, totp=None)
     setup_logging(3)
     dag = EODataAccessGateway(yaml_path)
@@ -94,6 +129,7 @@ if __name__ == "__main__":
     print(f'End date: {end}')
     
     for tile in args.tile:
+        print(f'Processing tile {tile}')
         online, offline = EODAG_search(download_path=localp, service=args.serv, productType='S2_MSI_L1C', tileIdentifier=tile, yaml_path=yaml_path, start=start, end=end)
         
         if not online and not offline:
