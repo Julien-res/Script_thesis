@@ -42,6 +42,7 @@ def Leetal(Rrs490,Rrs560,Rrs665)
     D=Rrs560-(Rrs490+(Rrs665-Rrs490)*(Rrs560-Rrs490)/(Rrs665-Rrs490))
     return D
 
+
 # Charger les données
 file_path = '/mnt/c/Travail/Script/Script_thesis/5_SPM_POC/Determination_Best_algo/Data_RRS_In_Situ.csv'
 SRF_MERIS='/mnt/c/Travail/Script/Script_thesis/5_SPM_POC/Determination_Best_algo/SRF/SRF_MERIS.csv'
@@ -65,3 +66,43 @@ B3 = interpolate_band(B3s, srf_S2A['B3'], srf_MERIS['B3'], 'B3', bandsS2A, bands
 B5 = interpolate_band(B5s, srf_S2A['B5'], srf_MERIS['B5'], 'B5', bandsS2A, bandsMeris)
 B7 = interpolate_band(B7s, srf_S2A['B7'], srf_MERIS['B7'], 'B7', bandsS2A, bandsMeris)
 Results_Le=Leeetal(B3,B5,B7)
+
+
+import numpy as np
+import pandas as pd
+from scipy.interpolate import interp1d
+
+# Charger les SRF (exemple avec des fichiers CSV)
+srf_meris = pd.read_csv("MERIS_SRF.csv")  # Colonnes: Wavelength, Response
+srf_s2 = pd.read_csv("Sentinel2_SRF.csv")  # Colonnes: Wavelength, Response
+
+# Interpolation des SRF sur une même grille spectrale
+common_wavelengths = np.linspace(400, 1000, 1000)  # Adapter selon ton besoin
+interp_meris = interp1d(srf_meris["Wavelength"], srf_meris["Response"], kind='linear', bounds_error=False, fill_value=0)
+interp_s2 = interp1d(srf_s2["Wavelength"], srf_s2["Response"], kind='linear', bounds_error=False, fill_value=0)
+
+srf_meris_resampled = interp_meris(common_wavelengths)
+srf_s2_resampled = interp_s2(common_wavelengths)
+
+# Ajustement des bandes Sentinel-2 pour correspondre aux bandes MERIS
+weights = srf_meris_resampled / (srf_s2_resampled + 1e-6)  # Éviter division par zéro
+sentinel2_fitted = np.dot(weights, srf_s2_resampled)
+
+# Vérifier les résultats
+import matplotlib.pyplot as plt
+plt.plot(common_wavelengths, srf_meris_resampled, label="MERIS SRF")
+plt.plot(common_wavelengths, sentinel2_fitted, label="Sentinel-2 Fitted", linestyle="dashed")
+plt.legend()
+plt.show()
+
+
+# bandS2 est ta bande Sentinel-2 sous forme de tableau NumPy (exemple: (rows, cols))
+
+# Normalisation des pondérations pour éviter des erreurs d’échelle
+weights /= np.sum(weights)  # Assure que la somme des poids est 1
+
+# Appliquer le band fitting
+band_meris_equivalent = bandS2 * weights
+
+# Vérifier que la transformation a bien fonctionné
+print("Bande MERIS simulée, shape:", band_meris_equivalent.shape)
