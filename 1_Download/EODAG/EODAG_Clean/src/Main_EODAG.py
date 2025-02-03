@@ -95,22 +95,21 @@ def filter_downloads(products, already_downloaded, tile):
     return filtered
 
 if __name__ == "__main__":
-    print ('Launching')
+    print ('Launching...')
     args = parse_arguments()
     if args.check:
         check = args.check
     else:
         check = args.output
     localp = setup_download_path(args.output)
-    print(f'Local path: {localp}')
-    print(f'Provider: {args.serv} (default: geodes)' if args.serv == 'geodes' else f'Provider: {args.serv}')
+    print(f'Check: {args.check}' if args.check else 'Check: not specified')
+    print(f'Output: {args.output}' if args.output else 'Output: not specified')
     print(f'Credential: {args.cred}')
+    print(f'Provider: {args.serv} (default: geodes)' if args.serv == 'geodes' else f'Provider: {args.serv}')
     print(f'Tile: {args.tile}')
     print(f'Year: {args.year}')
     print(f'Month: {args.month}' if args.month else 'Month: not specified')
     print(f'Recursive: {args.recursive} (default: True)' if args.recursive else f'Recursive: {args.recursive}')
-    print(f'Check: {args.check}' if args.check else 'Check: not specified')
-    print(f'Output: {args.output}' if args.output else 'Output: not specified')
     print('Parsing arguments done')
     print('Searching for already downloaded files...')
     already_downloaded = find_s2_files(check, args.recursive)
@@ -118,6 +117,7 @@ if __name__ == "__main__":
         print('No files found in the directory')
     else:
         print('{} found in the directory'.format(len(already_downloaded)))
+    print('====================================')
     print('Starting EODAG...')
     yaml_path = create_yaml(credential=args.cred, service=args.serv, dpath=localp, totp=None)
     setup_logging(3)

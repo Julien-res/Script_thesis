@@ -1,5 +1,13 @@
-import numpy as np
-import pandas as pd
+# Charger les bandes Sentinel-2 nécessaires
+def load_sentinel2_bands(file_path, bands):
+    """
+    Charge les données des bandes Sentinel-2 depuis un fichier.
+    :param file_path: Chemin vers le fichier des réflectances (CSV ou Excel).
+    :param bands: Liste des noms de colonnes des bandes Sentinel-2.
+    :return: DataFrame contenant les bandes sélectionnées.
+    """
+    data = pd.read_csv(file_path) if file_path.endswith(".csv") else pd.read_excel(file_path)
+    return data[bands]
 
 # Charger les SRFs depuis un fichier Excel
 def load_srf(file_path, sheet_name):
@@ -14,16 +22,7 @@ def load_srf(file_path, sheet_name):
     srf_values = srf_data.drop(columns=["SR_WL"]).values  # SRFs des bandes
     return wavelengths, srf_values
 
-# Charger les bandes Sentinel-2 nécessaires
-def load_sentinel2_bands(file_path, bands):
-    """
-    Charge les données des bandes Sentinel-2 depuis un fichier.
-    :param file_path: Chemin vers le fichier des réflectances (CSV ou Excel).
-    :param bands: Liste des noms de colonnes des bandes Sentinel-2.
-    :return: DataFrame contenant les bandes sélectionnées.
-    """
-    data = pd.read_csv(file_path) if file_path.endswith(".csv") else pd.read_excel(file_path)
-    return data[bands]
+
 
 # Convolution spectrale pour une bande cible
 def convolve_band(source_reflectance, source_wavelengths, source_srf, target_wavelength):

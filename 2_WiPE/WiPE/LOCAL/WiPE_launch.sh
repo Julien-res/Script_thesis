@@ -4,7 +4,7 @@ shopt -s globstar
 base64 -d <<<"H4sIAAAAAAAAA3WOwQ2AUAhD73+KHvXEQiZdpMNLi19PlpAGeBAAkHjFLmhhjFjdvToeFQ6e2bk0jEwMUs4OCmJjsR6GMFJwlgdZrpg28d0IIbdy4/kjyNzoAcUh5lNt4l/rBjwToz/uAAAA" | gunzip
 
 # MODIFY DEPENDING YOUR INSTALLATION
-ALLD="/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE/LOCAL/All_new_data_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX) (required to be a text format with .data at the end of name)
+ALLD="/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE_personal/Python_Dev/All_data_2021_PEPS.data" # Location of the list of file location to download (use 'find' command in UNIX) (required to be a text format with .data at the end of name)
 #eg : in an interactive console, launch this command before this bash : "find /nfs/data/path -name 'S2A_*.SAFE' -o -name 'S2B_*.SAFE' > /nfs/data/path/All_new_data_PEPS.data" to create the specific list
 CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE/LOCAL" # Where .credential are stored (CALCULCO password in privateKey.credential and earthdata.credential)
 CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
