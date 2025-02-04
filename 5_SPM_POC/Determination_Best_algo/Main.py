@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-path='/mnt/c/Travail/Script/Script_thesis/5_SPM_POC/Determination_Best_algo'
+# path='/mnt/c/Travail/Script/Script_thesis/5_SPM_POC/Determination_Best_algo'
+path='/mnt/c/Users/Julien/Documents/GitHub/Script_thesis/5_SPM_POC/Determination_Best_algo'
 os.chdir(path)
 from dictband import bandsS2A, bandsS2B, bandsMeris, Meris_to_S2
 
@@ -76,7 +77,7 @@ for i in ['B3', 'B5', 'B7']:
 
     # Normalize weights
     weights /= np.sum(weights)  # Assure que la somme des poids est 1
-    bandS2 = simulate_sentinel_band(data, srf_S2A[i], start_wlS2A[i], end_wlS2A[i], Meris_to_S2[i])
+    bandS2 = simulate_sentinel_band(data, srf_S2A[i], start_wlS2A[i], end_wlS2A[i])
 
     # Apply bad fitting
     band_meris_equivalent = np.zeros(bandS2.shape[0])
@@ -90,4 +91,7 @@ Results_Le=Leetal(band_meris_equivalent_tot['B3'],band_meris_equivalent_tot['B5'
 # Results_Le=Results_Le/100
 POC=data['POC_microg_L']
 plt.plot(POC)
+plt.show
+
 plt.plot(Results_Le)
+plt.show()
