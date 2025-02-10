@@ -1,48 +1,76 @@
+import os
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
-# Charger les SRF (Spectral Response Functions) pour MSI et MERIS
-def load_srf(file_path):
-    """
-    Charge une SRF à partir d'un fichier CSV.
-    Le fichier doit contenir deux colonnes : 'wavelength' et 'response'.
-    """
-    df = pd.read_csv(file_path)
-    return df['wavelength'].values, df['response'].values
+# path = '/mnt/c/Users/Julien/Documents/GitHub/Script_thesis/5_SPM_POC/Determination_Best_algo'
+path='/mnt/c/Travail/Script/Script_thesis/5_SPM_POC/Determination_Best_algo'
+os.chdir(path)
+from dictband import bandsS2A, bandsS2B, bandsMeris, Meris_to_S2
 
-# Intégration pondérée pour reconstruire la bande MERIS
-def integrate_band(target_srf_wavelengths, target_srf_response, spectrum_wavelengths, spectrum_values):
-    """
-    Effectue l'intégration pondérée pour reconstruire une bande MERIS à partir du spectre MSI.
-    """
-    # Interpoler le spectre sur les longueurs d'onde des SRF
-    interp_spectrum = interp1d(spectrum_wavelengths, spectrum_values, kind='linear', bounds_error=False, fill_value=0)
-    
-    # Évaluer le spectre sur les longueurs d'onde MERIS
-    resampled_spectrum = interp_spectrum(target_srf_wavelengths)
-    
-    # Intégration pondérée
-    numerator = np.trapz(resampled_spectrum * target_srf_response, target_srf_wavelengths)
-    denominator = np.trapz(target_srf_response, target_srf_wavelengths)
-    
-    return numerator / denominator if denominator != 0 else np.nan
+def load_data(file_path):
+    try:
+        data = pd.read_csv(file_path)
+        return data
+    except Exception as e:
+        print(f"An error occurred while loading the data: {e}")
+        exit(1)
 
-# Charger les SRF de MSI et MERIS
-msi_srf_wavelengths, msi_srf_response = load_srf("srf_msi.csv")  # Adapter au fichier MSI
-meris_srf_wavelengths, meris_srf_response = load_srf("srf_meris.csv")  # Adapter au fichier MERIS
+def load_srf(band, bands_dict, srf_path):
+    srf = load_data(srf_path)
+    if band not in bands_dict:
+        raise ValueError(f"Band {band} is not in the provided bands dictionary.")
+    start, end = bands_dict[band]
+    mask = (srf['SR_WL'] >= start) & (srf['SR_WL'] <= end)
+    return start, end, srf.loc[mask, band], srf['SR_WL'][mask]
 
-# Charger un spectre d’entrée (ex. réflectance Sentinel-2 interpolée à haute résolution)
-spectrum_df = pd.read_csv("spectrum.csv")  # Adapter au fichier
-spectrum_wavelengths = spectrum_df['wavelength'].values
-spectrum_values = spectrum_df['reflectance'].values
+def simulate_band(data, srf_band, start, end):
+    data_band = data.loc[:, str(start):str(end)]
+    return np.sum(data_band.values * srf_band.values, axis=1) / np.sum(srf_band.values)
 
-# Reconstruction des bandes MERIS à partir des données MSI
-reconstructed_bands = []
-for i, (meris_wl, meris_resp) in enumerate(zip(meris_srf_wavelengths, meris_srf_response)):
-    reconstructed_value = integrate_band(meris_wl, meris_resp, msi_srf_wavelengths, spectrum_values)
-    reconstructed_bands.append(reconstructed_value)
+def Le(Rrs490, Rrs560, Rrs665):
+    D = Rrs560 - (Rrs490 + ((555 - 490) / (555 - 490)) * (Rrs665 - Rrs490))
+    return np.where(D <= -0.0005, 10**(185.72*D + 1.97), 10**(485.19*D + 2.1))
+def Yu
+return None
+def Stramski
+return None
+def Tran
+return None
+def Duy
+return None
 
-# Affichage des résultats
-for i, value in enumerate(reconstructed_bands):
-    print(f"Bande MERIS {i+1}: {value:.4f}")
+
+file_path = os.path.join(path, 'Data_RRS_In_Situ.csv')
+srf_meris_path = os.path.join(path, 'SRF/SRF_MERIS.csv')
+srf_s2a_path = os.path.join(path, 'SRF/SRF_S2A.csv')
+data = load_data(file_path)
+
+srf_meris = {}
+start_meris = {}
+end_meris = {}
+wl_meris = {}
+
+srf_s2a = {}
+start_s2a = {}
+end_s2a = {}
+
+band_eq = {}
+
+for band in ['B3', 'B5', 'B7']:
+    start_meris[band], end_meris[band], srf_meris[band], wl_meris[band] = load_srf(band, bandsMeris, srf_meris_path)
+    start_s2a[band], end_s2a[band], srf_s2a[band], wl_s2a[band] = load_srf(Meris_to_S2[band], bandsS2A, srf_s2a_path)
+
+    band_s2 = simulate_band(data, srf_s2a[band], start_s2a[band], end_s2a[band])
+
+    band_eq[band] = np.array([np.sum(a * weights) for a in band_s2])
+
+results_le = Leetal(band_eq['B3'], band_eq['B5'], band_eq['B7'])
+poc = data['POC_microg_L']
+
+plt.plot(poc)
+plt.show()
+
+plt.plot(results_le)
+plt.show()
