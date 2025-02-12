@@ -33,6 +33,11 @@ def plot_results(poc, results, label, ax=None, outlier_threshold=1.5, log_scale=
     ax.plot(x, x, 'r--', alpha=0.5, label='x=y')
 
     if log_scale:
+        # Remove zero or negative values for log transformation
+        positive_mask = (poc > 0) & (results > 0)
+        poc = poc[positive_mask]
+        results = results[positive_mask]
+
         # Calculate and plot the linear regression line in log-log space
         log_poc = np.log10(poc)
         log_results = np.log10(results)
@@ -43,12 +48,13 @@ def plot_results(poc, results, label, ax=None, outlier_threshold=1.5, log_scale=
         ax.plot(poc, predicted, 'b-', label='Linear fit')
 
         # Calculate R² in log-log space
-        r2 = r2_score(log_poc, log_results)
+        r2 = r2_score(log_results, log_predicted)
         ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
 
         # Set logarithmic scale for x and y axes
         ax.set_xscale('log')
         ax.set_yscale('log')
+        
     else:
         # Calculate and plot the linear regression line in linear space
         model = LinearRegression()
@@ -59,18 +65,25 @@ def plot_results(poc, results, label, ax=None, outlier_threshold=1.5, log_scale=
         # Calculate R² in linear space
         r2 = r2_score(poc, results)
         ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-    # Set equal scaling for x and y axes
+    
+    # Set equal scaling for x and y axes with some padding
     min_val = min(poc.min(), results.min())
     max_val = max(poc.max(), results.max())
-    ax.set_xlim([min_val, max_val])
-    ax.set_ylim([min_val, max_val])
+    if log_scale:
+        padding = 0.1 * (np.log10(max_val) - np.log10(min_val))
+        ax.set_xlim([10**(np.log10(min_val) - padding), 10**(np.log10(max_val) + padding)])
+        ax.set_ylim([10**(np.log10(min_val) - padding), 10**(np.log10(max_val) + padding)])
+    else:
+        padding = 0.1 * (max_val - min_val)
+        ax.set_xlim([min_val - padding, max_val + padding])
+        ax.set_ylim([min_val - padding, max_val + padding])
 
     if created_ax:
         # Add labels and legend
         ax.set_xlabel('POC (microg/L)')
         ax.set_ylabel(label)
-        ax.legend()
+        legend = ax.legend()
+        legend.get_frame().set_alpha(0.5)  # Set the legend background to be slightly transparent
 
     return ax
 

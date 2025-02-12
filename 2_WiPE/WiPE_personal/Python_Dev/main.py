@@ -126,10 +126,10 @@ if __name__ == "__main__":
         corrected_bands = np.zeros((7, 1830, 1830))
     for band in bands:
         corrected_bands[bands.index(band)] = apply_rayleigh_correction(
-            input_path=args.input,
-            target_res=args.resolution,
-            band=band,
-            resolution_method=args.method
+        input_path=args.input,
+        target_res=args.resolution,
+        band=band,
+        resolution_method=args.method
         )
     Mask = applyWiPE(corrected_bands)
     profile = load_band(filepath=args.input, resolution=args.resolution)

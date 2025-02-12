@@ -15,8 +15,13 @@ from plot_result import plot_results, process_and_plot, process_and_plot_modes
 # =====================================================================
 # Define the algorithms
 def Le18(Rrs490, Rrs555, Rrs670):
-    Ci = Rrs555 - (Rrs490 + ((555 - 490) / (555 - 490)) * (Rrs670 - Rrs490))
-    return np.where(Ci <= -0.0005, 10**(185.72*Ci + 1.97), 10**(485.19*Ci + 2.1))
+    Ci = Rrs560 - (Rrs490 + ((560 - 490) / (665 - 490)) * (Rrs665 - Rrs490))
+    return np.where(Ci < -0.0005, 10**(185.72*Ci + 1.97), 10**(485.19*Ci + 2.1))
+
+def Le18_2(Rrs443, Rrs490, Rrs560, Rrs665):
+    Ci = Rrs560 - (Rrs490 + ((560 - 490) / (665 - 490)) * (Rrs665 - Rrs490))
+    Ratio= Rrs443/Rrs560
+    return np.where(Ci <= -0.0005, 10**(-0.66*Ratio+2.06), 10**(-1.38*Ratio + 2.31))
 
 def Stramski08(Rrs443, Rrs490, Rrs510, Rrs555, mode='max'):
     if Rrs555 is None:
@@ -70,16 +75,47 @@ def Hu16(Rrs443, Rrs490, Rrs510, Rrs555, mode='max'):
     return data.apply(calculate_row, axis=1)
 
 
+
+def Tran19(Rrs490, Rrs510, Rrs555, Rrs665):
+    def calculate_row(row):
+        X = np.log1p(max(row['Rrs665'] / row['Rrs490'] - 1, row['Rrs665'] / row['Rrs510'] - 1, row['Rrs665'] / row['Rrs555'] - 1))
+        return 10**(0.928 * X + 2.875)
+
+    data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
+    return data.apply(calculate_row, axis=1)
+
 # Load data and SRF
 file_path = os.path.join(path, 'Data_RRS_In_Situ.csv')
 
-# Plot the results for Stramski08
+# Plot the results for Tran19
+process_and_plot(
+    data=file_path,
+    srf_path=path,
+    sensor='MERIS',
+    bands=['B3', 'B4', 'B5', 'B7'],
+    func=Tran19,
+    outlier=1.5,
+    logscale=True
+)
+
+# Plot the results for Le18
+
 process_and_plot(
     data=file_path,
     srf_path=path,
     sensor='MERIS',
     bands=['B3', 'B5', 'B7'],
     func=Le18,
+    outlier=1.5,
+    logscale=True
+)
+
+process_and_plot(
+    data=file_path,
+    srf_path=path,
+    sensor='MERIS',
+    bands=['B2','B3', 'B5', 'B7'],
+    func=Le18_2,
     outlier=1.5,
     logscale=True
 )
