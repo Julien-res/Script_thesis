@@ -9,10 +9,9 @@ import argparse
 import os
 path = os.curdir
 # Default path to SNAPPY is ~/esa_snappy but modify if required 
-sys.path.insert(1, os.path.expanduser('~'))  # To load esa_snappy, its source file must be loaded
 from rayleigh_correction import apply_rayleigh_correction
 from applyWiPE import applyWiPE
-os.chdir(os.path.expanduser('~'))
+# os.chdir(os.path.expanduser('~'))
 import rasterio
 import numpy as np
 from rasterio.merge import merge
@@ -20,6 +19,12 @@ from rasterio.plot import reshape_as_raster, reshape_as_image
 from rasterio.transform import from_origin
 from glob import glob
 import time
+
+# ANSI color codes
+BLUE = '\033[1;34m'
+RED = '\033[0;31m'
+GREEN='\033[0;32m'
+NC = '\033[0m'  # Reset
 
 # TEST="/mnt/c/Travail/Script/S2A_MSIL1C_20231216T032131_N0510_R118_T48PXQ_20231216T050649.SAFE"
 # TEST2="/mnt/c/Travail/Script/S2A_MSIL1C_20241128T110411_N0511_R094_T31UDS_20241128T130346.SAFE"
@@ -131,10 +136,13 @@ if __name__ == "__main__":
         band=band,
         resolution_method=args.method
         )
+    
     Mask = applyWiPE(corrected_bands)
+    print(f"{GREEN}WiPE applied successfully{NC}")
+    print(f"{BLUE}Saving water mask image ...{NC}")
     profile = load_band(filepath=args.input, resolution=args.resolution)
     save_composite(output_path=Output, composite=Mask, profile=profile, output_name=args.name, compression=args.compression)
-    print(f"Water mask image saved at {os.path.join(Output, args.name) + '.jp2'}")
+    print(f"{GREEN}Water mask image saved at {os.path.join(Output, args.name) + '.jp2'}{NC}")
     print(f"--- {time.time() - start_time} seconds ---")
     print(f"--- or {(time.time() - start_time)/60} minutes ---")
     print('Clearing __pycache__')

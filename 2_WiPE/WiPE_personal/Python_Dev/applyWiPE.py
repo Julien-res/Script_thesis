@@ -31,6 +31,7 @@ def applyWiPE(bands):
     source_min = np.argmin(stacked, axis=0)
 
     # Iterate over each pixel to apply additional conditions
+    print("Step 2 - Additional conditions - May take a while ...")
     rows, cols = bands[4].shape
     for i in range(rows):
         for j in range(cols):

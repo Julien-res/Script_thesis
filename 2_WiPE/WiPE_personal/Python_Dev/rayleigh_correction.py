@@ -1,6 +1,25 @@
-import esa_snappy
+try :
+    import esa_snappy
+except ImportError:
+    print('module esa_snappy not installed in the env. Trying to load it from the user home dir...')
+    import sys
+    import os
+    sys.path.insert(1, os.path.expanduser('~'))  # To load esa_snappy, its source file must be loaded
+    try :
+        import esa_snappy
+    except ImportError:
+        print("The module 'esa_snappy' is not found. Please check the installation of the SNAP-Python library.")
+        sys.exit(10)
+
 from esa_snappy import ProductIO, HashMap, GPF
 import numpy as np
+
+# ANSI color codes
+BLUE = '\033[1;34m'
+RED = '\033[0;31m'
+GREEN='\033[0;32m'
+NC = '\033[0m'  # Reset
+
 
 def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolution_method="Sampling"):
     """
@@ -23,7 +42,7 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     # Check if the specified band exists
     if band not in product.getBandNames():
         raise RuntimeError(f"Error: The specified band '{band}' is not available in the product.")
-    print(f"Selected band for correction: {band}")
+    # print(f"Selected band for correction: {band}")
     
     resolutions = {
         "B2": 10, "B3": 10, "B4": 10,
@@ -31,22 +50,21 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     }
     res = resolutions.get(band, 60)
     # Resample bands to target_res
-    print(f"Band resolution: {res}m")
-    print(f"Resampling bands to {target_res}m...")
+    print(f"Band resolution: {res}m resampled to {target_res}m")
 
     parameters = HashMap()
 
     parameters.put('sourceBandNames', band)  # Select only the specified band
     parameters.put('computeRBrr', 'true')  # Keep corrected bands
     if resolution_method == "Sampling":
-        print("Resampling method: Sampling")
+        # print("Resampling method: Sampling")
         parameters.put('s2MsiTargetResolution', Integer(res))
     else:
-        print("Resampling method: Other")
+        # print("Resampling method: Other")
         parameters.put('s2MsiTargetResolution', Integer(20))
 
     # Apply Rayleigh correction
-    print("Applying Rayleigh correction...")
+    # print("Applying Rayleigh correction...")
     try:
         corrected_product = GPF.createProduct("RayleighCorrection", parameters, product)
     except RuntimeError as e:
@@ -63,15 +81,15 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
         corrected_product = GPF.createProduct("Resample", resample_params, corrected_product)
     
     corrected_band_name = f"rBRR_{band}"
-    print("Correction and resampling completed.")
+    # print("Correction and resampling completed.")
 
     # Convert corrected bands to numpy arrays
     if corrected_band_name not in corrected_product.getBandNames():
-        raise RuntimeError(f"Error: The corrected band '{corrected_band_name}' is not available after correction.")
+        raise RuntimeError(f"{RED}Error: The corrected band '{corrected_band_name}' is not available after correction.{NC}")
 
     band = corrected_product.getBand(corrected_band_name)
     width, height = band.getRasterWidth(), band.getRasterHeight()
-    print(f"Reading corrected band '{corrected_band_name}' ({width}x{height})...")
+    print(f"{BLUE}Writing corrected band '{corrected_band_name}' ({width}x{height})...{NC}")
 
     # Verify and initialize the array with the correct type
     band_type = band.getDataType()
@@ -89,7 +107,7 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     # Read pixels
     band.readPixels(0, 0, width, height, band_data)
 
-    print("Correction and resampling completed.")
+    print(f"{GREEN}Correction and resampling completed.{NC}")
     return band_data
 
 # def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolution_method="Sampling"):
