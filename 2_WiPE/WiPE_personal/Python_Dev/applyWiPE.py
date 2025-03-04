@@ -1,5 +1,12 @@
 import numpy as np
 
+# ANSI color codes
+BLUE = '\033[1;34m'
+RED = '\033[0;31m'
+GREEN='\033[0;32m'
+NC = '\033[0m'  # Reset
+
+
 def applyWiPE(bands):
     """Applies WiPE calculations.
     Takes as input bands 2,3,4,7,10,11,12 in list format
@@ -15,13 +22,11 @@ def applyWiPE(bands):
     mask[np.isnan(bands[0]) | np.isnan(bands[1]) | np.isnan(bands[2]) | np.isnan(bands[3])] = 0
 
     # Step 1: Filtering with conditions
-    print("Step 1")
+    print("Step 1 and 2 - Filtering and normalization - Should be fast")
     mask[(bands[5] / bands[2] > 0.69) & (mask == 1)] = 10  # Condition 1.1
     mask[(bands[5] > 0.035) & (mask == 1)] = 20         # Condition 1.2
     mask[(bands[0] < 0.0065) | (bands[4] > 0.01072) & (mask == 1)] = 30  # Condition 1.3
-
     # Step 2: Band normalization
-    print("Step 2 - Normalization")
     max_bands = [band / np.nanmax(band) for band in bands[:3]]
     stacked = np.stack(max_bands, axis=0)
     max_bands = None
@@ -31,7 +36,7 @@ def applyWiPE(bands):
     source_min = np.argmin(stacked, axis=0)
 
     # Iterate over each pixel to apply additional conditions
-    print("Step 2 - Additional conditions - May take a while ...")
+    print(f"{BLUE}Step 2 - Additional conditions - May take a while ...{NC}")
     rows, cols = bands[4].shape
     for i in range(rows):
         for j in range(cols):

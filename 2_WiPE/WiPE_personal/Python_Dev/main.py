@@ -7,11 +7,11 @@ Require a working SNAP installation (SNAP 11.01 or higher) to compute Rayleigh c
 import sys
 import argparse
 import os
+import datetime
 path = os.curdir
-# Default path to SNAPPY is ~/esa_snappy but modify if required 
 from rayleigh_correction import apply_rayleigh_correction
 from applyWiPE import applyWiPE
-# os.chdir(os.path.expanduser('~'))
+os.chdir(os.path.expanduser('~'))
 import rasterio
 import numpy as np
 from rasterio.merge import merge
@@ -19,7 +19,7 @@ from rasterio.plot import reshape_as_raster, reshape_as_image
 from rasterio.transform import from_origin
 from glob import glob
 import time
-
+import psutil
 # ANSI color codes
 BLUE = '\033[1;34m'
 RED = '\033[0;31m'
@@ -50,7 +50,7 @@ def load_band(filepath, resolution):
     return profile
 
 # Save mask without compression => Should be useless
-def save_composite(output_path, composite, profile, output_name,compression):
+def save_composite(output_path, composite, profile, output_name, compression):
     """Save the mask while preserving georeferencing."""
     if compression == 'n':
         profile.update(dtype='uint16', count=1, driver='GTiff')
@@ -70,6 +70,7 @@ def save_composite(output_path, composite, profile, output_name,compression):
 # Entry point of the script
 if __name__ == "__main__":
     start_time = time.time()
+    start_datetime = datetime.datetime.now()
     parser = argparse.ArgumentParser(description="Apply Rayleigh correction to a Sentinel-2 image")
     parser.add_argument(
         "-o", "--output",
@@ -93,28 +94,40 @@ if __name__ == "__main__":
         default="Sampling"
     )
     parser.add_argument(
+        "-p", "--path_snap",
+        dest="path_snap",
+        type=str,
+        help="Path to the esa-snappy module (default: ~)",
+        default="~"
+    )
+    parser.add_argument(
         "-c", "--compression",
         dest="compression",
         type=str,
-        help="Wether or not to compress the output image(s) (default: y)",
+        help="Wether or not to compress the output image (y/n)",
         default="y"
     )
-    requiredNamed = parser.add_argument_group('Required Arguments')
-    requiredNamed.add_argument(
+    parser.add_argument(
+        "-l", "--log",
+        dest="log",
+        type=str,
+        default='False',
+        help="Log RAM usage and start/end times (default: False)"
+    )
+    parser.add_argument(
         "-i", "--input",
         dest="input",
         type=str,
         help="Path to the Sentinel-2 file (SAFE)",
         required=True
     )
-    requiredNamed.add_argument(
+    parser.add_argument(
         "-n", "--name",
         dest="name",
         type=str,
         help="Name of the output image",
         required=True
     )
-    
     args = parser.parse_args()
 
     if args.output == 'stdout':
@@ -134,18 +147,31 @@ if __name__ == "__main__":
         input_path=args.input,
         target_res=args.resolution,
         band=band,
-        resolution_method=args.method
+        resolution_method=args.method,
+        path_snap=args.path_snap
         )
-    
     Mask = applyWiPE(corrected_bands)
     print(f"{GREEN}WiPE applied successfully{NC}")
     print(f"{BLUE}Saving water mask image ...{NC}")
     profile = load_band(filepath=args.input, resolution=args.resolution)
     save_composite(output_path=Output, composite=Mask, profile=profile, output_name=args.name, compression=args.compression)
-    print(f"{GREEN}Water mask image saved at {os.path.join(Output, args.name) + '.jp2'}{NC}")
-    print(f"--- {time.time() - start_time} seconds ---")
-    print(f"--- or {(time.time() - start_time)/60} minutes ---")
+    print(f"{GREEN}Water mask image saved at {os.path.join(Output, args.name) + '.tif'}{NC}")
+    end_time = time.time()
+    end_datetime = datetime.datetime.now()
+    print(f"--- {end_time - start_time} seconds ---")
+    print(f"--- or {(end_time - start_time)/60} minutes ---")
     print('Clearing __pycache__')
     files = glob(os.path.join(path, '__pycache__/*'))
     for f in files:
         os.remove(f)
+
+    # Log RAM usage and start/end times if logging is enabled
+    if args.log == 'True':
+        ram_usage = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024 * 1024)  # in GB
+        log_file_path = os.path.join(os.path.dirname(__file__), 'ram_usage_log.txt')
+        with open(log_file_path, 'a') as log_file:
+            log_file.write(f"Start time: {start_datetime}\n")
+            log_file.write(f"End time: {end_datetime}\n")
+            log_file.write(f"Total RAM used: {ram_usage:.2f} GB\n")
+            log_file.write("=====================================\n")
+        print(f"{GREEN}RAM usage logged at {log_file_path}{NC}")

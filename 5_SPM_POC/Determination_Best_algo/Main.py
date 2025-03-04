@@ -1,3 +1,5 @@
+%reload_ext autoreload
+%autoreload 2
 import os
 import sys
 import numpy as np
@@ -126,21 +128,20 @@ def Tran19(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
     data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
     return data.apply(calculate_row, axis=1)
 
-
 # ======================== Load data and SRF
 file_path = os.path.join(path, 'Data_RRS_In_Situ.csv')
 
 # Plot the results for Tran19
 
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    bands=['B3', 'B4', 'B5', 'B7'],
-    func=Le17,
-    sensor='MERIS',
-    outlier=1.5,
-    logscale=True,
-)
+# process_and_plot(
+#     data=file_path,
+#     srf_path=path,
+#     bands=['B3', 'B4', 'B5', 'B7'],
+#     func=Le17,
+#     sensor='MERIS',
+#     outlier=1.5,
+#     logscale=True,
+# )
 
 process_and_plot(
     data=file_path,
@@ -157,11 +158,12 @@ process_and_plot(
 process_and_plot(
     data=file_path,
     srf_path=path,
+    sensor='MERIS',
     bands=['B2','B3', 'B5', 'B7'],
     func=Le18BG,
     outlier=1.5,
-    logscale=True,
-    sensor='MERIS'
+    logscale=True
+
 )
 
 process_and_plot(
@@ -200,34 +202,3 @@ process_and_plot(
     logscale=True
 )
 
-# =====================================================================
-from scipy.optimize import curve_fit
-
-def Tran19(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
-    if kwargs.get('sensor', None) != 'MERIS':
-        raise ValueError("Tran19 algorithm is only available for MERIS sensor.")
-    def calculate_row(row):
-        X = np.log1p(max(row['Rrs665'] / row['Rrs490'] - 1, row['Rrs665'] / row['Rrs510'] - 1, row['Rrs665'] / row['Rrs555'] - 1))
-        return 10**(0.928 * X + 2.875)
-
-    data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
-    return data.apply(calculate_row, axis=1)
-
-# TUTO
-# import numpy as np
-# from scipy.optimize import curve_fit
-
-# # Données
-# x = np.array([1, 2, 3, 4, 5])
-# y = np.array([2.2, 4.1, 6.0, 7.9, 9.8])
-
-# # Définir l'équation avec les coefficients à ajuster
-# def my_model(x, a, b):  
-#     return a * x + b  
-
-# # Ajustement
-# params, _ = curve_fit(my_model, x, y, p0=[1, 1])  # p0 = estimation initiale
-
-# # Résultats
-# a_opt, b_opt = params
-# print(f"Meilleurs coefficients: a = {a_opt:.3f}, b = {b_opt:.3f}")

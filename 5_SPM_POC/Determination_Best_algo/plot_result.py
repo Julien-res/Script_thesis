@@ -1,9 +1,11 @@
 import numpy as np
 import sys
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, mean_squared_error
 import matplotlib.pyplot as plt
 from load_datas import load_data, load_srf_data, simulate_band
+from scipy.stats import ttest_ind
+import seaborn as sns
 
 def plot_results(poc, results, label, **kwargs):
     """
@@ -15,10 +17,11 @@ def plot_results(poc, results, label, **kwargs):
     - label: str, label for the y-axis
     - kwargs: additional keyword arguments for customization
     """
+    sns.set_theme(style="ticks")
     created_ax = False
     ax = kwargs.get('ax', None)
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(6,6))
         created_ax = True
 
     # Remove NaN values
@@ -44,44 +47,88 @@ def plot_results(poc, results, label, **kwargs):
         scatter = ax.scatter(poc, results, c=classif, cmap='viridis', label='Data points')
         plt.colorbar(scatter, ax=ax, label='Classification')
     else:
-        ax.plot(poc, results, 'o', label='Data points')
+        sns.scatterplot(x=poc, y=results, ax=ax, label='Data points')
 
     # Plot the x=y line
-    x = np.linspace(min(poc), max(poc), 100)
-    ax.plot(x, x, 'r--', alpha=0.5, label='x=y')
-
+    min_val = min(poc.min(), results.min())
+    max_val = max(poc.max(), results.max())
+    x = np.logspace(np.log10(min_val), np.log10(max_val), 100) if kwargs.get('logscale', True) else np.linspace(min_val, max_val, 100)
+    sns.lineplot(x=x, y=x, ax=ax, color='red', linestyle='--', alpha=0.5, label='x=y')
     if kwargs.get('logscale', True):
         # Remove zero or negative values for log transformation
         positive_mask = (poc > 0) & (results > 0)
-        poc = poc[positive_mask]
-        results = results[positive_mask]
+        poc_mask = poc[positive_mask]
+        results_mask = results[positive_mask]
 
         # Calculate and plot the linear regression line in log-log space
-        log_poc = np.log10(poc)
-        log_results = np.log10(results)
-        model = LinearRegression()
-        model.fit(log_poc.values.reshape(-1, 1), log_results)
-        log_predicted = model.predict(log_poc.values.reshape(-1, 1))
-        predicted = 10**log_predicted
-        ax.plot(poc, predicted, 'b-', label='Linear fit')
-
-        # Calculate R² in log-log space
-        r2 = r2_score(log_results, log_predicted)
-        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        log_poc = np.log10(poc_mask)
+        log_results = np.log10(results_mask)
+        model_log = LinearRegression()
+        model_log.fit(log_poc.values.reshape(-1, 1), log_results)
+        log_predicted = model_log.predict(log_poc.values.reshape(-1, 1))
+        predicted_log = 10**log_predicted
+        sns.lineplot(x=poc_mask, y=predicted_log, ax=ax, label='Linear fit (log-log)', color='g')
 
         # Set logarithmic scale for x and y axes
         ax.set_xscale('log')
         ax.set_yscale('log')
+
+        # Calculate R² in log space
+        r2_log = r2_score(log_results, log_predicted)
+        ax.text(0.05, 0.95, f'R² = {r2_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Calculate RMSD in log space
+        rmsd_log = np.sqrt(mean_squared_error(results_mask, poc_mask))
+        ax.text(0.05, 0.90, f'RMSD = {rmsd_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Calculate MLAE (Mean Absolute Percentage Deviation) in linear space
+        mlae_log = np.mean(np.abs((log_predicted - log_poc) / log_poc)) * 100
+        ax.text(0.05, 0.85, f'MLAE = {mlae_log:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+
+        # Perform Student's t-test in log space
+        _, p_value_log = ttest_ind(results_mask, poc_mask)
+        ax.text(0.05, 0.80, f't-test p-value = {p_value_log:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Display linear regression equation in log space
+        slope_log = model_log.coef_[0]
+        intercept_log = model_log.intercept_
+        ax.text(0.05, 0.75, f'y = {10**intercept_log:.2f} * x^{slope_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Display number of points in log space
+        num_points_log = len(poc_mask)
+        ax.text(0.05, 0.70, f'Number of points = {num_points_log}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
     else:
         # Calculate and plot the linear regression line in linear space
-        model = LinearRegression()
-        model.fit(poc.values.reshape(-1, 1), results)
-        predicted = model.predict(poc.values.reshape(-1, 1))
-        ax.plot(poc, predicted, 'b-', label='Linear fit')
+        model_lin = LinearRegression()
+        model_lin.fit(poc.values.reshape(-1, 1), results)
+        predicted_lin = model_lin.predict(poc.values.reshape(-1, 1))
+        sns.lineplot(x=poc, y=predicted_lin, ax=ax, label='Linear fit (linear)', color='g')
 
         # Calculate R² in linear space
-        r2 = r2_score(poc, results)
-        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        r2_lin = r2_score(results, predicted_lin)
+        ax.text(0.05, 0.95, f'R² = {r2_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Calculate RMSD in linear space
+        rmsd_lin = np.sqrt(mean_squared_error(results, predicted_lin))
+        ax.text(0.05, 0.90, f'RMSD = {rmsd_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Calculate MAPD (Mean Absolute Percentage Deviation) in linear space
+        mapd_lin = np.mean(np.abs((results - poc) / poc)) * 100
+        ax.text(0.05, 0.85, f'MAPD = {mapd_lin:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Perform Student's t-test in linear space
+        t_stat_lin, p_value_lin = ttest_ind(results, poc)
+        ax.text(0.05, 0.80, f't-test p-value = {p_value_lin:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Display linear regression equation in linear space
+        slope_lin = model_lin.coef_[0]
+        intercept_lin = model_lin.intercept_
+        ax.text(0.05, 0.75, f'y = {slope_lin:.2f}x + {intercept_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
+        # Display number of points in linear space
+        num_points_lin = len(poc)
+        ax.text(0.05, 0.70, f'Number of points = {num_points_lin}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
 
     # Set equal scaling for x and y axes with some padding
     min_val = min(poc.min(), results.min())
@@ -103,8 +150,11 @@ def plot_results(poc, results, label, **kwargs):
             ax.set_ylabel(label + ' on ' + sensor)
         else:
             ax.set_ylabel(label)
-        legend = ax.legend()
+        legend = ax.legend(loc='lower right')
         legend.get_frame().set_alpha(0.5)  # Set the legend background to be slightly transparent
+
+    # Remove top and right spines
+    sns.despine(ax=ax)
 
     return ax
 

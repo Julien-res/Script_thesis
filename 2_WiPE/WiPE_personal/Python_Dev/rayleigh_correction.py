@@ -1,27 +1,28 @@
-try :
-    import esa_snappy
-except ImportError:
-    print('module esa_snappy not installed in the env. Trying to load it from the user home dir...')
-    import sys
-    import os
-    sys.path.insert(1, os.path.expanduser('~'))  # To load esa_snappy, its source file must be loaded
-    try :
-        import esa_snappy
-    except ImportError:
-        print("The module 'esa_snappy' is not found. Please check the installation of the SNAP-Python library.")
-        sys.exit(10)
-
-from esa_snappy import ProductIO, HashMap, GPF
-import numpy as np
-
 # ANSI color codes
 BLUE = '\033[1;34m'
 RED = '\033[0;31m'
 GREEN='\033[0;32m'
 NC = '\033[0m'  # Reset
+def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolution_method="Sampling",path_snap='~'):
+    import sys
+    import os
+    if path_snap == '~':
+        sys.path.insert(1, os.path.expanduser('~'))  # To load esa_snappy, its source file must be loaded
+        try :
+            import esa_snappy
+        except ImportError:
+            print('module esa_snappy not installed in the env. Trying to load it from the user home dir...')
+            sys.exit(10)
+    else:
+        sys.path.insert(1,path_snap)
+        try:
+            import esa_snappy
+        except ImportError:
+            print("The module 'esa_snappy' is not found. Please check the installation of the SNAP-Python library.")
+            sys.exit(10)
 
-
-def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolution_method="Sampling"):
+    from esa_snappy import ProductIO, HashMap, GPF
+    import numpy as np
     """
     Applies Rayleigh correction to a specific band of a Sentinel-2 image using SNAP.
 
@@ -34,7 +35,7 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     Integer = jpy.get_type('java.lang.Integer')
     
     # Load Sentinel-2 product
-    product = ProductIO.readProduct(input_path)
+    product = ProductIO.readProduct(os.path.join(input_path, 'MTD_MSIL1C.xml'))
     if product is None:
         raise RuntimeError("Error: Sentinel-2 product could not be loaded. Check the input path.")
     print(f"Product loaded: {product.getName()}")
@@ -89,7 +90,6 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
 
     band = corrected_product.getBand(corrected_band_name)
     width, height = band.getRasterWidth(), band.getRasterHeight()
-    print(f"{BLUE}Writing corrected band '{corrected_band_name}' ({width}x{height})...{NC}")
 
     # Verify and initialize the array with the correct type
     band_type = band.getDataType()
@@ -103,7 +103,7 @@ def apply_rayleigh_correction(input_path=None, target_res=20, band="B2", resolut
     if np_dtype is None:
         raise RuntimeError(f"Unknown band type: {band_type}")
     band_data = np.empty((height, width), dtype=np_dtype)
-
+    print(f"{BLUE}Writing corrected band'{corrected_band_name}' ({width}x{height}) to RAM...{NC} ")
     # Read pixels
     band.readPixels(0, 0, width, height, band_data)
 

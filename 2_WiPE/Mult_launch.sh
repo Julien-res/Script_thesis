@@ -8,20 +8,20 @@ GREEN='\033[1;32m'
 WHITE='\033[47m'
 NC='\033[0m'
 base64 -d <<<"H4sIAAAAAAAAA7WVwQ3DMAhF75G6gzfwPbMgeRGrs9cQwBhIaqlqDq3L9+fVQJJS5Gp4leT6WXgduqyAnxAtvwuTUs8T8B8EEwpptn1BKUM5Ky28B848Gzo2BaEIpNVY6RxDuTYFpggkr3SGIceucFEUctObmI0cY+OeQBQDyXsTKq0Bj8kFpHiI9kaGPlTaBGBHGBQ+Ywu9oQUklV4C9M1ljsLleB19/OhZb3jqgYWZzQY4GyYo3fVkOphiTqK94c0aACNIQDZ0TNb9KdQxKkaxbAAWYQQA69pQoEWrfkMJGHZg9+FqWZwyI8RHQroh6YlOMm22AyA5VWgpRDY4h58JuSs5Fu+Xu2eYxaz/IvRkUuTosTpfMe93cjzbE0O5b8FXTHY879Anf6jwYkpfPI+YxTHfYqHCVkjoz5jVYd7IocJqepqyLYeh/PE6Pg94QOzDCAAA" | gunzip
-echo -e "${RED}= Don't pay attention to snap WARNING = ${NC}"
+
 echo -e "${BLUE}Based on Ngoc et al. (2019)"
 echo -e "Code by : Julien Masson - LOG UMR CNRS 8187"
 echo -e "Require a working SNAP installation (SNAP 11.01 or higher)${NC}"
-conda init
-source activate base
-# source ~/miniforge3/etc/profile.d/conda.sh
+# Initialize conda
+eval "$(conda shell.bash hook)"
+# Activate the SNAP environment
 conda activate SNAP
 
 
-INPUT="/mnt/d/DATA/WiPE_Not_Working_test/2021/"
-OUTPUT="/mnt/d/DATA/WiPE_Not_Working_test/Personal_WiPE/"
+INPUT="/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/Match_up/1_RAW/"
+OUTPUT="/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/Match_up/2_1_WIPE/"
 METHOD="Other"
-PROGRAM="/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE_personal/Python_Dev/" # Location of main.py
+PROGRAM="/work/users/cverpoorter/VolTransMESKONG/Code/Code_WiPE/WiPE_personal/Python_Dev/" # Location of main.py
 RESOLUTION=10 #Resolution required for output (10 20 or 60m)
 #=======================================================
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
@@ -40,10 +40,10 @@ if [ ! -d "$INPUT" ]; then
   exit 1
 fi
 
-# Rechercher les fichiers .SAFE dans le dossier INPUT
-SAFE_FILES=($(find "$INPUT" -type d -name "*.SAFE"))
+# Rechercher les dossiers dans le dossier INPUT commençant par "S2A" ou "S2B" et ne contenant pas ".zip"
+SAFE_FILES=($(find "$INPUT" -type d \( -name "S2A*" -o -name "S2B*" \) ! -path "*.zip"))
 if [ ${#SAFE_FILES[@]} -eq 0 ]; then
-  echo -e "${RED}Aucun fichier .SAFE trouvé dans le répertoire $INPUT. ${NC}"
+  echo -e "${RED}Aucun dossier .SAFE commençant par S2A ou S2B trouvé dans le répertoire $INPUT. ${NC}"
   exit 1
 fi
 
