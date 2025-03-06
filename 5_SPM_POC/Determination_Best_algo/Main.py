@@ -18,8 +18,8 @@ from plot_result import process_and_plot
 # =====================================================================
 # Define the algorithms
 
-def Le17(Rrs490, Rrs510, Rrs555, Rrs665, **kwargs):
-    return(1000*np.exp(709.291*Rrs490-797.831*Rrs510+101.013*Rrs555+53.661*Rrs665-0.520))
+# def Le17(Rrs490, Rrs510, Rrs555, Rrs665, **kwargs):
+#     return(1000*np.exp(709.291*Rrs490-797.831*Rrs510+101.013*Rrs555+53.661*Rrs665-0.520))
 
 def Le18BG(*args, **kwargs):
     sensor = kwargs.get('sensor', None)
@@ -130,75 +130,76 @@ def Tran19(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
 
 # ======================== Load data and SRF
 file_path = os.path.join(path, 'Data_RRS_In_Situ.csv')
+# Define the parameters for each algorithm
+algorithms = [
+    {
+        'func': Tran19,
+        'sensor': 'MERIS',
+        'bands': ['B3', 'B4', 'B5', 'B7'],
+        'save_result': 'Tran19.png'
+    },
+    {
+        'func': Le18BG,
+        'sensor': 'MERIS',
+        'bands': ['B2', 'B3', 'B5', 'B7'],
+        'save_result': 'Le18BG.png'
+    },
+    {
+        'func': Le18CI,
+        'sensor': 'MERIS',
+        'bands': ['B3', 'B5', 'B7'],
+        'save_result': 'Le18CI.png'
+    },
+    {
+        'func': Stramski08,
+        'sensor': 'SEAWIFS',
+        'bands': ['B2', 'B3', 'B4', 'B5'],
+        'modes': ['max', 'Rrs443', 'Rrs490', 'Rrs510'],
+        'title': 'Stramski08 algorithm for different modes',
+        'save_result': 'Stramski08.png'
+    },
+    {
+        'func': Hu16,
+        'sensor': 'SEAWIFS',
+        'bands': ['B2', 'B3', 'B4', 'B5'],
+        'modes': ['max', 'Rrs443', 'Rrs490', 'Rrs510'],
+        'title': 'Hu16 algorithm for different modes',
+        'save_result': 'Hu16.png'
+    }
+]
 
-# Plot the results for Tran19
+# test=algorithms[0]
+# process_and_plot(
+#     data=file_path,
+#     srf_path=path,
+#     bands=test['bands'],
+#     func=test['func'],
+#     sensor=test['sensor'],
+#     outlier=1.5,
+#     logscale=True)
 
 # process_and_plot(
 #     data=file_path,
 #     srf_path=path,
-#     bands=['B3', 'B4', 'B5', 'B7'],
-#     func=Le17,
-#     sensor='MERIS',
+#     bands=test['bands'],
+#     func=test['func'],
+#     sensor=test['sensor'],
 #     outlier=1.5,
-#     logscale=True,
-# )
+#     logscale=False)
+# Loop through each algorithm and plot results for both logscale True and False
 
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    bands=['B3', 'B4', 'B5', 'B7'],
-    func=Tran19,
-    sensor='MERIS',
-    outlier=1.5,
-    logscale=True
-)
-
-# Plot the results for Le18
-
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    sensor='MERIS',
-    bands=['B2','B3', 'B5', 'B7'],
-    func=Le18BG,
-    outlier=1.5,
-    logscale=True
-
-)
-
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    sensor='MERIS',
-    bands=['B3', 'B5', 'B7'],
-    func=Le18CI,
-    outlier=1.5,
-    logscale=True
-)
-
-# Plot the results for Stramski08
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    sensor='SEAWIFS',
-    bands=['B2', 'B3', 'B4', 'B5'],
-    func=Stramski08,
-    modes=['max', 'Rrs443', 'Rrs490', 'Rrs510'],
-    title='Stramski08 algorithm for different modes',
-    outlier=1.5,
-    logscale=True
-)
-
-# Plot the results for Hu16
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    sensor='SEAWIFS',
-    bands=['B2', 'B3', 'B4', 'B5'],
-    func=Hu16,
-    modes=['max', 'Rrs443', 'Rrs490', 'Rrs510'],
-    title='Hu16 algorithm for different modes',
-    outlier=1.5,
-    logscale=True
-)
+if __name__ == '__main__':
+    for algo in algorithms:
+        for logscale in [True, False]:
+            process_and_plot(
+                data=file_path,
+                srf_path=path,
+                bands=algo['bands'],
+                func=algo['func'],
+                sensor=algo['sensor'],
+                outlier=1.5,
+                logscale=logscale,
+                save_result=algo['save_result'].replace('.png', f'_logscale_{str(logscale)}.png'),
+                **{k: v for k, v in algo.items() if k not in ['func', 'sensor', 'bands', 'save_result']}
+            )
 

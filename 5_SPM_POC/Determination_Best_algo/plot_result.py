@@ -1,224 +1,202 @@
-import numpy as np
+import os
 import sys
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, mean_squared_error
 import matplotlib.pyplot as plt
 from load_datas import load_data, load_srf_data, simulate_band
-from scipy.stats import ttest_ind
+from scipy.stats import ttest_ind, linregress
 import seaborn as sns
 
-def plot_results(poc, results, label, **kwargs):
-    """
-    Plots the results of an algorithm against POC (Particulate Organic Carbon).
-
-    Parameters:
-    - poc: array-like, POC values
-    - results: array-like, results from the algorithm
-    - label: str, label for the y-axis
-    - kwargs: additional keyword arguments for customization
-    """
-    sns.set_theme(style="ticks")
-    created_ax = False
-    ax = kwargs.get('ax', None)
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(6,6))
-        created_ax = True
-
-    # Remove NaN values
+def remove_nan_values(poc, results):
     mask = ~np.isnan(results)
-    results = results[mask]
-    poc = poc[mask]
+    return poc[mask], results[mask]
 
-    # Remove outliers using the IQR method
+def remove_outliers(poc, results, outlier_threshold=1.5):
     q1 = np.percentile(results, 25)
     q3 = np.percentile(results, 75)
     iqr = q3 - q1
-    outlier_threshold = kwargs.get('outlier', 1.5)
     lower_bound = q1 - outlier_threshold * iqr
     upper_bound = q3 + outlier_threshold * iqr
-    outlier_mask = (results >= lower_bound) & (results <= upper_bound)
-    results = results[outlier_mask]
-    poc = poc[outlier_mask]
+    mask = (results >= lower_bound) & (results <= upper_bound)
+    return poc[mask], results[mask]
 
-    # Plot the results
-    classif = kwargs.get('classif', None)
+def plot_scatter(ax, poc, results, classif=None):
     if classif is not None:
-        classif = np.array(classif)[mask][outlier_mask]
         scatter = ax.scatter(poc, results, c=classif, cmap='viridis', label='Data points')
         plt.colorbar(scatter, ax=ax, label='Classification')
     else:
         sns.scatterplot(x=poc, y=results, ax=ax, label='Data points')
 
-    # Plot the x=y line
+def plot_identity_line(ax, poc, results, logscale=True, ci=0.95):
     min_val = min(poc.min(), results.min())
     max_val = max(poc.max(), results.max())
-    x = np.logspace(np.log10(min_val), np.log10(max_val), 100) if kwargs.get('logscale', True) else np.linspace(min_val, max_val, 100)
-    sns.lineplot(x=x, y=x, ax=ax, color='red', linestyle='--', alpha=0.5, label='x=y')
-    if kwargs.get('logscale', True):
-        # Remove zero or negative values for log transformation
+    x = np.logspace(np.log10(min_val), np.log10(max_val), 100) if logscale else np.linspace(min_val, max_val, 100)
+    if logscale:
+        extended_x = np.logspace(np.log10(min_val) - 1, np.log10(max_val) + 1, 100)
+        ax.plot(extended_x, 10 ** (np.log10(extended_x) + 1), color='black', linestyle='--', alpha=0.5, linewidth=0.5)
+        ax.plot(10 ** (np.log10(extended_x) + 1), extended_x, color='black', linestyle='--', alpha=0.5, linewidth=0.5)
+        sns.lineplot(x=extended_x, y=extended_x, ax=ax, color='black', linewidth=0.5)
+    else:
+        extended_x = np.linspace(min_val, max_val, 100)
+        sns.lineplot(x=extended_x, y=extended_x, ax=ax, color='black', linewidth=0.5)
+        ax.plot(extended_x, extended_x + (max_val - min_val) * 0.1, color='black', linestyle='--', alpha=0.5, linewidth=0.5)
+        ax.plot(extended_x + (max_val - min_val) * 0.1, extended_x, color='black', linestyle='--', alpha=0.5, linewidth=0.5)
+
+def plot_regression(ax, poc, results, logscale=True):
+    if logscale:
         positive_mask = (poc > 0) & (results > 0)
         poc_mask = poc[positive_mask]
         results_mask = results[positive_mask]
-
-        # Calculate and plot the linear regression line in log-log space
         log_poc = np.log10(poc_mask)
         log_results = np.log10(results_mask)
         model_log = LinearRegression()
         model_log.fit(log_poc.values.reshape(-1, 1), log_results)
         log_predicted = model_log.predict(log_poc.values.reshape(-1, 1))
-        predicted_log = 10**log_predicted
+        predicted_log = 10 ** log_predicted
         sns.lineplot(x=poc_mask, y=predicted_log, ax=ax, label='Linear fit (log-log)', color='g')
-
-        # Set logarithmic scale for x and y axes
+        slope_log, intercept_log, r_value, p_value, std_err = linregress(log_poc, log_results)
+        ci_log = 1.96 * std_err
+        ax.fill_between(poc_mask, 10 ** (log_predicted - ci_log), 10 ** (log_predicted + ci_log), color='red', alpha=0.1)
         ax.set_xscale('log')
         ax.set_yscale('log')
-
-        # Calculate R² in log space
         r2_log = r2_score(log_results, log_predicted)
-        ax.text(0.05, 0.95, f'R² = {r2_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Calculate RMSD in log space
         rmsd_log = np.sqrt(mean_squared_error(results_mask, poc_mask))
-        ax.text(0.05, 0.90, f'RMSD = {rmsd_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Calculate MLAE (Mean Absolute Percentage Deviation) in linear space
         mlae_log = np.mean(np.abs((log_predicted - log_poc) / log_poc)) * 100
-        ax.text(0.05, 0.85, f'MLAE = {mlae_log:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-
-        # Perform Student's t-test in log space
         _, p_value_log = ttest_ind(results_mask, poc_mask)
-        ax.text(0.05, 0.80, f't-test p-value = {p_value_log:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Display linear regression equation in log space
         slope_log = model_log.coef_[0]
         intercept_log = model_log.intercept_
-        ax.text(0.05, 0.75, f'y = {10**intercept_log:.2f} * x^{slope_log:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Display number of points in log space
         num_points_log = len(poc_mask)
-        ax.text(0.05, 0.70, f'Number of points = {num_points_log}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        return r2_log, rmsd_log, mlae_log, p_value_log, slope_log, intercept_log, num_points_log
     else:
-        # Calculate and plot the linear regression line in linear space
         model_lin = LinearRegression()
         model_lin.fit(poc.values.reshape(-1, 1), results)
         predicted_lin = model_lin.predict(poc.values.reshape(-1, 1))
         sns.lineplot(x=poc, y=predicted_lin, ax=ax, label='Linear fit (linear)', color='g')
-
-        # Calculate R² in linear space
+        slope_lin, intercept_lin, r_value, p_value, std_err = linregress(poc, results)
+        ci_lin = 1.96 * std_err
+        ax.fill_between(poc, predicted_lin - ci_lin, predicted_lin + ci_lin, color='red', alpha=0.1)
         r2_lin = r2_score(results, predicted_lin)
-        ax.text(0.05, 0.95, f'R² = {r2_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Calculate RMSD in linear space
         rmsd_lin = np.sqrt(mean_squared_error(results, predicted_lin))
-        ax.text(0.05, 0.90, f'RMSD = {rmsd_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Calculate MAPD (Mean Absolute Percentage Deviation) in linear space
         mapd_lin = np.mean(np.abs((results - poc) / poc)) * 100
-        ax.text(0.05, 0.85, f'MAPD = {mapd_lin:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Perform Student's t-test in linear space
-        t_stat_lin, p_value_lin = ttest_ind(results, poc)
-        ax.text(0.05, 0.80, f't-test p-value = {p_value_lin:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Display linear regression equation in linear space
+        _, p_value_lin = ttest_ind(results, poc)
         slope_lin = model_lin.coef_[0]
         intercept_lin = model_lin.intercept_
-        ax.text(0.05, 0.75, f'y = {slope_lin:.2f}x + {intercept_lin:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-
-        # Display number of points in linear space
         num_points_lin = len(poc)
-        ax.text(0.05, 0.70, f'Number of points = {num_points_lin}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        return r2_lin, rmsd_lin, mapd_lin, p_value_lin, slope_lin, intercept_lin, num_points_lin
+    
+def plot_results(poc, results, label, **kwargs):
+    sns.set_theme(style="ticks")
+    created_ax = False
+    ax = kwargs.get('ax', None)
+    if ax is None:
+        _, ax = plt.subplots(figsize=(6, 6))
+        created_ax = True
 
-    # Set equal scaling for x and y axes with some padding
+    poc, results = remove_nan_values(poc, results)
+    poc, results = remove_outliers(poc, results, kwargs.get('outlier', 1.5))
+    plot_scatter(ax, poc, results, kwargs.get('classif', None))
+    plot_identity_line(ax, poc, results, kwargs.get('logscale', True), kwargs.get('ci', 0.95))
+
+    if kwargs.get('logscale', True):
+        r2, rmsd, mlae, p_value, slope, intercept, num_points = plot_regression(ax, poc, results, logscale=True)
+        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.92, f'RMSD = {rmsd:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.89, f'MLAE = {mlae:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.86, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.83, f'y = {10 ** intercept:.2f} * x^{slope:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.80, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+    else:
+        r2, rmsd, mapd, p_value, slope, intercept, num_points = plot_regression(ax, poc, results, logscale=False)
+        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.92, f'RMSD = {rmsd:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.89, f'MAPD = {mapd:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.86, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.83, f'y = {slope:.2f}x + {intercept:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        ax.text(0.05, 0.80, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
     min_val = min(poc.min(), results.min())
     max_val = max(poc.max(), results.max())
     if kwargs.get('logscale', True):
         padding = 0.1 * (np.log10(max_val) - np.log10(min_val))
-        ax.set_xlim([10**(np.log10(min_val) - padding), 10**(np.log10(max_val) + padding)])
-        ax.set_ylim([10**(np.log10(min_val) - padding), 10**(np.log10(max_val) + padding)])
+        ax.set_xlim([10 ** (np.log10(min_val) - padding), 10 ** (np.log10(max_val) + padding)])
+        ax.set_ylim([10 ** (np.log10(min_val) - padding), 10 ** (np.log10(max_val) + padding)])
     else:
         padding = 0.1 * (max_val - min_val)
-        ax.set_xlim([min_val - padding, max_val + padding])
-        ax.set_ylim([min_val - padding, max_val + padding])
+        ax.set_xlim([0, max_val + padding])
+        ax.set_ylim([0, max_val + padding])
 
     if created_ax:
-        # Add labels and legend
+        ax.set_ylabel('POC (microg/L) model')
         ax.set_xlabel('POC (microg/L)')
         sensor = kwargs.get('sensor', None)
         if sensor is not None:
-            ax.set_ylabel(label + ' on ' + sensor)
+            ax.set_title(label + ' on ' + sensor)
         else:
-            ax.set_ylabel(label)
+            ax.set_title(label)
         legend = ax.legend(loc='lower right')
-        legend.get_frame().set_alpha(0.5)  # Set the legend background to be slightly transparent
+        legend.get_frame().set_alpha(0.5)
 
-    # Remove top and right spines
+    ax.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray', alpha=0.7)  # Adjusted linewidth
     sns.despine(ax=ax)
 
     return ax
 
-def process_and_plot(data, srf_path, bands, func, **kwargs):
-    """
-    Processes the data and plots the results of the given function.
 
-    Parameters:
-    - data: path to the data file
-    - srf_path: path to the SRF (Spectral Response Function) data
-    - bands: list of bands to simulate
-    - func: function to apply to the data
-    - kwargs: additional keyword arguments for customization
-    """
+def process_and_plot(data, srf_path, bands, func, **kwargs):
     datar = load_data(data)
-    band_eq = {}
     srf_data = load_srf_data(srf_path, kwargs.get('sensor', None))
-    for band in bands:  # Simulate bands
-        bandr = srf_data[band]
-        bandr['Wavelengths'] = bandr['Wavelengths'].round().astype(int)
-        bandr = bandr.groupby('Wavelengths', as_index=False).mean()
-        band_eq[band] = simulate_band(datar, bandr['Values'], int(bandr['Wavelengths'][0]), int(bandr['Wavelengths'].values[-1]))
+    band_eq = {band: simulate_band(datar, srf_data[band]['Values'],
+                                    int(srf_data[band]['Wavelengths'][0]), 
+                                    int(srf_data[band]['Wavelengths'].values[-1])) for band in bands}
     poc = datar['POC_microg_L']
-    if 'pathmeta' in kwargs:  # Manh T Duy classification to color points if called
+
+    classif = None
+    if 'pathmeta' in kwargs:
         sys.path.append(kwargs.get('pathmeta', None))
         from Dict import SENSOR_BANDS
         from common.Chl_CONNECT import Chl_CONNECT
-        if kwargs.get('sensor', None) == 'MERIS':
-            senso = 'MODIS'
-        else:
-            senso = kwargs.get('sensor', None)
-        bandmeta = SENSOR_BANDS[senso]
-        band_class = {}
-        Rrs_class = []
-        for band in bandmeta:
-            bandr = srf_data[band]
-            bandr['Wavelengths'] = bandr['Wavelengths'].round().astype(int)
-            bandr = bandr.groupby('Wavelengths', as_index=False).mean()
-            band_class[band] = simulate_band(datar, bandr['Values'], int(bandr['Wavelengths'][0]), int(bandr['Wavelengths'].values[-1]))
-            Rrs_class.append(band_class[band])
-        Rrs_class = np.array(Rrs_class).T
-        Chl_NN_mc = Chl_CONNECT(Rrs_class,senso)
+        senso = 'MODIS' if kwargs.get('sensor', None) == 'MERIS' else kwargs.get('sensor', None)
+        band_class = {band: simulate_band(datar, srf_data[band]['Values'],
+                                            int(srf_data[band]['Wavelengths'][0]), 
+                                            int(srf_data[band]['Wavelengths'].values[-1])) for band in SENSOR_BANDS[senso]}
+        Rrs_class = np.array(list(band_class.values())).T
+        Chl_NN_mc = Chl_CONNECT(Rrs_class, senso)
         classif = Chl_NN_mc.Class
+
+    def plot_mode(ax, mode=None):
+        results = func(*[band_eq[band] for band in bands], mode=mode, **kwargs) if mode else func(*[band_eq[band] for band in bands], **kwargs)
+        plot_results(poc=poc, results=results, label=func.__name__, ax=ax, classif=classif, **kwargs)
+        if mode:
+            ax.set_title(f'Mode: {mode}')
+        else:
+            ax.set_title(func.__name__ + ' algorithm using ' + kwargs.get('sensor', ''))
+        ax.set_ylabel('POC (microg/L) model')
+        ax.set_xlabel('POC (microg/L)')
+
     if 'modes' in kwargs:
         figure, axis = plt.subplots(2, 2, figsize=(12, 12))
         for i, (ax, mode) in enumerate(zip(axis.flatten(), kwargs.pop('modes'))):
-            results = func(*[band_eq[band] for band in bands], mode=mode, **kwargs)
-            if 'pathmeta' in kwargs:
-                plot_results(poc=poc, results=results, label=func.__name__, ax=ax, mode=mode, classif=classif, **kwargs)
-            else:
-                plot_results(poc=poc, results=results, label=func.__name__, ax=ax, mode=mode, **kwargs)
-            ax.set_title(f'Mode: {mode}')
+            plot_mode(ax, mode)
             if i % 2 == 1:
-                ax.set_yticklabels([])
+                ax.set_ylabel('')
             if i < 2:
-                ax.set_xticklabels([])
+                ax.set_xlabel('')
         handles, labels = axis[0, 0].get_legend_handles_labels()
         figure.legend(handles, labels, loc='lower center', ncol=3)
-        figure.suptitle(func.__name__ + ' algorithm for different modes', fontsize=16)
+        figure.suptitle(func.__name__ + ' algorithm for different modes using ' + kwargs.get('sensor', ''), fontsize=16)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        plt.show()
     else:
-        results = func(*[band_eq[band] for band in bands], **kwargs)
-        if 'pathmeta' in kwargs:
-            plot_results(poc=poc, results=results, label=func.__name__, classif=classif, **kwargs)
-        else:
-            plot_results(poc=poc, results=results, label=func.__name__, **kwargs)
+        figure, ax = plt.subplots(figsize=(6, 6))
+        plot_mode(ax)
+        plt.tight_layout()
+    save_result = kwargs.get('save_result', None)
+    if save_result:
+        output_dir = os.path.join(os.path.dirname(__file__), 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        save_path = os.path.join(output_dir, save_result)
+        figure.savefig(save_path)
+        print(f"Figure saved as {save_path}")
+    else:
+        plt.show()
+        print("Figure displayed")
