@@ -1,0 +1,18 @@
+#!/bin/bash
+#OAR -l /core=12,walltime=500:00:00
+#OAR -p network_address = 'orval10'
+#OAR -t idempotent
+#OAR -q besteffort
+#OAR -n EODAG_DLmissing_verif
+#OAR --notify mail:julien.masson@univ-littoral.fr
+#OAR -O /nfs/home/log/jmasson/Script/EODAG/EODAG_Listing_DLmissing/Scratch/EODAG_DLmissing_verif.%jobid%.out
+#OAR -E /nfs/home/log/jmasson/Script/EODAG/EODAG_Listing_DLmissing/Scratch/EODAG_DLmissing_verif.%jobid%.err
+
+
+cd /nfs/home/log/jmasson
+source /nfs/opt/env/env.sh
+module load conda
+source activate envpyth
+
+PROG=/nfs/home/log/jmasson/Script/EODAG/EODAG_Listing_DLmissing/3_Verif/EODAG_startup_DLmissing_verif.sh
+$PROG "$@"

@@ -30,3 +30,16 @@ Ancillary/.urs_cookies
 5_SPM_POC/Determination_Best_algo/Simulated_S2INSITU
 5_SPM_POC/Determination_Best_algo/Simulated_S2INSITU_columns
 /5_SPM_POC/Determination_Best_algo/SRF/no_mod
+*.prj
+*.qix
+*.shp
+*.dbf
+*.qgz
+*.shx
+*.cpg
+*.kmz
+*.kml
+*.qgz
+*.sbn
+*.sbx
+*.qmd

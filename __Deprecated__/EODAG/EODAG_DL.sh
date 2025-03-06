@@ -1,0 +1,2 @@
+#!/bin/sh
+python ./EODAG_DL.py -y 2015 -m 02 -d /nfs/data/unprotected/log/cverpoorter/VolTransMESKONG/S2_PEPS/S2_PEPS_L1C/New_data -c /nfs/home/log/jmasson/Script/EODAG/Credential -s peps -p S2_MSI_L1C -t 48PWQ
