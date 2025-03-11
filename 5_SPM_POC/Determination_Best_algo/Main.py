@@ -1,5 +1,3 @@
-%reload_ext autoreload
-%autoreload 2
 import os
 import sys
 import numpy as np
@@ -15,6 +13,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 
 from plot_result import process_and_plot
+from load_datas import load_data, load_srf_data, simulate_band
+from taylor_diagram import taylor_diagram
 # =====================================================================
 # Define the algorithms
 
@@ -123,13 +123,55 @@ def Tran19(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
         raise ValueError("Tran19 algorithm is only available for MERIS sensor.")
     def calculate_row(row):
         X = np.log1p(max(row['Rrs665'] / row['Rrs490'] - 1, row['Rrs665'] / row['Rrs510'] - 1, row['Rrs665'] / row['Rrs555'] - 1))
-        return 10**(0.928 * X + 2.875)
+        return 10**(0.928 * X + 2.875) #10**(0.928 * X + 2.875)
 
     data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
     return data.apply(calculate_row, axis=1)
 
+def Masson (B1,B2,B3,B4,B5,B6,B7,**kwargs):
+    if kwargs.get('sensor', None) != 'S2A' and kwargs.get('sensor', None) != 'S2B':
+        raise ValueError("Masson algorithm is only available for S2A or S2B (MSI) sensor.")
+    POC = 616.948 + (-158199.279 * B1) + (26243.212 * B2) + (49729.572 * B3) + (-90867.531 * B4) + (89122.649 * B5) + (271187.117 * B6) + (-165030.846 * B7)
+    return POC
+# def Manh23(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
+#     if kwargs.get('sensor', None) != 'MERIS':
+#         raise ValueError("Manh23 algorithm is only available for MERIS sensor.")
+#     def Tran(row):
+#         X = np.log1p(max(row['Rrs665'] / row['Rrs490'] - 1, row['Rrs665'] / row['Rrs555'] - 1))
+#         return 10**(0.928 * X + 2.875)
+#     def Le17(row):
+#         return(np.exp(-115.69*row['Rrs490']-53.64*row['Rrs510']+172.13*row['Rrs555']-40.06*row['Rrs665']-0.54))
+#     data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
+#     A= data.apply(Tran, axis=1)
+#     B= data.apply(Le17, axis=1)
+#     #==================Chl-CONNECT==================
+#     sys.path.append(kwargs.get('pathmeta', None))
+#     from Dict import SENSOR_BANDS
+#     from common.Chl_CONNECT import Chl_CONNECT
+#     if kwargs.get('sensor', None) == 'MERIS' or kwargs.get('sensor', None) == 'SEAWIFS':
+#         senso = 'MODIS'
+#     elif kwargs.get('sensor', None) == 'S2A' or kwargs.get('sensor', None) == 'S2B':
+#         senso='MSI'
+#     else:
+#         senso = kwargs.get('sensor', None)
+#     # senso='MSI'
+
+#     datar = load_data(kwargs.get('datatot', None))
+#     srf_data = load_srf_data(kwargs.get('srf_patht',None), kwargs.get('sensor', None))
+#     band_class = {band: simulate_band(datar, srf_data[band]['Values'],
+#                                         int(srf_data[band]['Wavelengths'][0]), 
+#                                         int(srf_data[band]['Wavelengths'].values[-1])) for band in SENSOR_BANDS[senso]}
+#     Rrs_class = np.array(list(band_class.values())).T
+#     classif = Chl_CONNECT(Rrs_class,method='logreg', sensor=senso,logRrsClassif=False,pTransform=False).Class
+#     p1 = 
+#     p2 = 
+#     p3 = 
+#     return A*(p1+p2)+B*p3
+
+
 # ======================== Load data and SRF
 file_path = os.path.join(path, 'Data_RRS_In_Situ.csv')
+pathmeta='/mnt/c/Travail/Script/Chl-CONNECT/'
 # Define the parameters for each algorithm
 algorithms = [
     {
@@ -165,41 +207,54 @@ algorithms = [
         'modes': ['max', 'Rrs443', 'Rrs490', 'Rrs510'],
         'title': 'Hu16 algorithm for different modes',
         'save_result': 'Hu16.png'
+    },
+    {
+        'func': Masson,
+        'sensor': 'S2A',
+        'bands': ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
+        'title': 'Masson algorithm using S2A',
+        'save_result': 'Masson.png'
     }
 ]
 
-# test=algorithms[0]
-# process_and_plot(
-#     data=file_path,
-#     srf_path=path,
-#     bands=test['bands'],
-#     func=test['func'],
-#     sensor=test['sensor'],
-#     outlier=1.5,
-#     logscale=True)
+test=algorithms[-1]
+process_and_plot(
+    data=file_path,
+    srf_path=path,
+    bands=test['bands'],
+    func=test['func'],
+    sensor=test['sensor'],
+    pathmeta=pathmeta,
+    outlier=1.5,
+    logscale=True)
 
-# process_and_plot(
-#     data=file_path,
-#     srf_path=path,
-#     bands=test['bands'],
-#     func=test['func'],
-#     sensor=test['sensor'],
-#     outlier=1.5,
-#     logscale=False)
-# Loop through each algorithm and plot results for both logscale True and False
+process_and_plot(
+    data=file_path,
+    srf_path=path,
+    bands=test['bands'],
+    func=test['func'],
+    sensor=test['sensor'],
+    pathmeta=pathmeta,
+    outlier=1.5,
+    logscale=False)
 
-if __name__ == '__main__':
-    for algo in algorithms:
-        for logscale in [True, False]:
-            process_and_plot(
-                data=file_path,
-                srf_path=path,
-                bands=algo['bands'],
-                func=algo['func'],
-                sensor=algo['sensor'],
-                outlier=1.5,
-                logscale=logscale,
-                save_result=algo['save_result'].replace('.png', f'_logscale_{str(logscale)}.png'),
-                **{k: v for k, v in algo.items() if k not in ['func', 'sensor', 'bands', 'save_result']}
-            )
+# # Loop through each algorithm and plot results for both logscale True and False
+
+# if __name__ == '__main__':
+#     for algo in algorithms:
+#         for outlier in [1.5, None]:
+#             for logscale in [True, False]:
+#                 process_and_plot(
+#                     data=file_path,
+#                     srf_path=path,
+#                     bands=algo['bands'],
+#                     func=algo['func'],
+#                     sensor=algo['sensor'],
+#                     outlier=outlier,
+#                     logscale=logscale,
+#                     pathmeta=pathmeta,
+#                     save_result=algo['save_result'].replace('.png', f'_logscale_{str(logscale)}_out_{str(outlier)}.png'),
+#                     **{k: v for k, v in algo.items() if k not in ['func', 'sensor', 'bands', 'save_result']},
+
+#                 )
 
