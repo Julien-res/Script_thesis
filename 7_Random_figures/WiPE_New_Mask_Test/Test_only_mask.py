@@ -13,6 +13,7 @@ def sum_masks(directory, output, substring):
     result_matrices = {value: None for value in mask_values}
     transform = None
     crs = None
+    total_images = 0
 
     print(f"Processing files in directory: {directory} with substring: {substring}")
 
@@ -35,6 +36,8 @@ def sum_masks(directory, output, substring):
                     else:
                         result_matrices[value] += mask_value_matrix
 
+                total_images += 1
+
     # Save the resulting matrices as images
     for value, matrix in result_matrices.items():
         if matrix is not None:
@@ -53,6 +56,25 @@ def sum_masks(directory, output, substring):
                 compress='LZW'  # Apply lossless compression
             ) as dst:
                 dst.write(matrix, 1)
+
+            # Calculate percentage matrix
+            percent_matrix = (matrix / total_images) * 100
+            percent_output_path = os.path.join(output, "Percent", f"percent_mask_{substring}_{value}.tif")
+            os.makedirs(os.path.dirname(percent_output_path), exist_ok=True)
+            print(f"Saving percentage result to: {percent_output_path}")
+            with rasterio.open(
+                percent_output_path,
+                'w',
+                driver='GTiff',
+                height=percent_matrix.shape[0],
+                width=percent_matrix.shape[1],
+                count=1,
+                dtype=rasterio.float32,
+                crs=crs,
+                transform=transform,
+                compress='LZW'  # Apply lossless compression
+            ) as dst:
+                dst.write(percent_matrix.astype(rasterio.float32), 1)
 
 directory = '/mnt/d/DATA/WiPE/TREATED'
 output = "/mnt/c/Travail/Script/Script_thesis/7_Random_figures/WiPE_New_Mask_Test/Output"

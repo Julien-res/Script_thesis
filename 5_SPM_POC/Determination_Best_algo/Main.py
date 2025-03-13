@@ -52,12 +52,9 @@ def Le18BG(*args, **kwargs):
         # Ci = Rrs555 - (Rrs490 + ((555 - 490) / (670 - 490)) * (Rrs670 - Rrs490))
         # return np.where(Ci < -0.0005, 10**(185.72*Ci + 1.97), 10**(485.19*Ci + 2.1))
 
-def Le18CI(*args, **kwargs):
+def Le18CI(Rrs490,Rrs555,Rrs670, **kwargs):
     sensor = kwargs.get('sensor', None)
     if sensor =='MERIS':
-        Rrs490=args[0]
-        Rrs555=args[1]
-        Rrs670=args[2]
         Ci = Rrs555 - (Rrs490 + ((555 - 490) / (670 - 490)) * (Rrs670 - Rrs490))
         return np.where(Ci < -0.0005, 10**(185.72*Ci + 1.97), 10**(485.19*Ci + 2.1))
 
@@ -128,11 +125,17 @@ def Tran19(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
     data = pd.DataFrame({'Rrs490': Rrs490, 'Rrs510': Rrs510, 'Rrs555': Rrs555, 'Rrs665': Rrs665})
     return data.apply(calculate_row, axis=1)
 
-def Masson (B1,B2,B3,B4,B5,B6,B7,**kwargs):
+def Massonlin (B1,B2,B3,B4,B5,B6,B7,**kwargs):
     if kwargs.get('sensor', None) != 'S2A' and kwargs.get('sensor', None) != 'S2B':
         raise ValueError("Masson algorithm is only available for S2A or S2B (MSI) sensor.")
     POC = 616.948 + (-158199.279 * B1) + (26243.212 * B2) + (49729.572 * B3) + (-90867.531 * B4) + (89122.649 * B5) + (271187.117 * B6) + (-165030.846 * B7)
     return POC
+
+def Massonlog (B1,B2,B3,B4,B5,B6,B7,**kwargs):
+    if kwargs.get('sensor', None) != 'S2A' and kwargs.get('sensor', None) != 'S2B':
+        raise ValueError("Masson algorithm is only available for S2A or S2B (MSI) sensor.")
+    POC=6.131 + (26.376 * B1) + (-283.814 * B2) + (149.855 * B3) + (-5.147 * B4) + (53.874 * B5) + (66.965 * B6) + (-51.972 * B7)
+    return 10**POC
 # def Manh23(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
 #     if kwargs.get('sensor', None) != 'MERIS':
 #         raise ValueError("Manh23 algorithm is only available for MERIS sensor.")
@@ -209,52 +212,59 @@ algorithms = [
         'save_result': 'Hu16.png'
     },
     {
-        'func': Masson,
+        'func': Massonlin,
         'sensor': 'S2A',
         'bands': ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
         'title': 'Masson algorithm using S2A',
-        'save_result': 'Masson.png'
+        'save_result': 'Massonlin.png'
+    },
+    {
+        'func': Massonlog,
+        'sensor': 'S2A',
+        'bands': ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7'],
+        'title': 'Masson algorithm using S2A',
+        'save_result': 'Massonlog.png'
     }
 ]
 
-test=algorithms[-1]
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    bands=test['bands'],
-    func=test['func'],
-    sensor=test['sensor'],
-    pathmeta=pathmeta,
-    outlier=1.5,
-    logscale=True)
+# test=algorithms[-1]
+# process_and_plot(
+#     data=file_path,
+#     srf_path=path,
+#     bands=test['bands'],
+#     func=test['func'],
+#     sensor=test['sensor'],
+#     pathmeta=pathmeta,
+#     outlier=1.5,
+#     logscale=True)
 
-process_and_plot(
-    data=file_path,
-    srf_path=path,
-    bands=test['bands'],
-    func=test['func'],
-    sensor=test['sensor'],
-    pathmeta=pathmeta,
-    outlier=1.5,
-    logscale=False)
+# process_and_plot(
+#     data=file_path,
+#     srf_path=path,
+#     bands=test['bands'],
+#     func=test['func'],
+#     sensor=test['sensor'],
+#     pathmeta=pathmeta,
+#     outlier=1.5,
+#     logscale=False)
 
-# # Loop through each algorithm and plot results for both logscale True and False
+# Loop through each algorithm and plot results for both logscale True and False
 
-# if __name__ == '__main__':
-#     for algo in algorithms:
-#         for outlier in [1.5, None]:
-#             for logscale in [True, False]:
-#                 process_and_plot(
-#                     data=file_path,
-#                     srf_path=path,
-#                     bands=algo['bands'],
-#                     func=algo['func'],
-#                     sensor=algo['sensor'],
-#                     outlier=outlier,
-#                     logscale=logscale,
-#                     pathmeta=pathmeta,
-#                     save_result=algo['save_result'].replace('.png', f'_logscale_{str(logscale)}_out_{str(outlier)}.png'),
-#                     **{k: v for k, v in algo.items() if k not in ['func', 'sensor', 'bands', 'save_result']},
+if __name__ == '__main__':
+    for algo in algorithms:
+        for outlier in [1.5, None]:
+            for logscale in [True, False]:
+                process_and_plot(
+                    data=file_path,
+                    srf_path=path,
+                    bands=algo['bands'],
+                    func=algo['func'],
+                    sensor=algo['sensor'],
+                    outlier=outlier,
+                    logscale=logscale,
+                    pathmeta=pathmeta,
+                    save_result=algo['save_result'].replace('.png', f'_logscale_{str(logscale)}_out_{str(outlier)}.png'),
+                    **{k: v for k, v in algo.items() if k not in ['func', 'sensor', 'bands', 'save_result']},
 
-#                 )
+                )
 
