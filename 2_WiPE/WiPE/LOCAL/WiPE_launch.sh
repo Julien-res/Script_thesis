@@ -10,7 +10,7 @@ CREDENTIAL="/mnt/c/Travail/Script/Script_thesis/2_WiPE/WiPE/LOCAL" # Where .cred
 CRD="cverpoorter@calculco.univ-littoral.fr" # Account to ssh login
 DOWNLOADED="/mnt/d/DATA/WiPE/DOWNLOADED" # Where to output downloaded datas
 TREATED="/mnt/d/DATA/WiPE/TREATED" # Where to output treated datas
-PROGRAM="/mnt/c/Travail/Script/WiPE/wipesen_2024_03" # Location of wipesen
+PROGRAM="/mnt/c/Travail/Script/WiPE_ALL_OLD_VER/wipesen_2024_03" # Location of wipesen
 #=======================================================
 # AFTER THIS, HIC SVNT LEONES. MODIFY WITH CAUTION.
 

@@ -136,6 +136,28 @@ def Massonlog (B1,B2,B3,B4,B5,B6,B7,**kwargs):
         raise ValueError("Masson algorithm is only available for S2A or S2B (MSI) sensor.")
     POC=6.131 + (26.376 * B1) + (-283.814 * B2) + (149.855 * B3) + (-5.147 * B4) + (53.874 * B5) + (66.965 * B6) + (-51.972 * B7)
     return 10**POC
+
+
+
+def Le17_modis(rrs_488, rrs_531, rrs_547, rrs_667, rrs_678):
+    """
+    Calcule le POC à partir des réflectances Rrs pour MODIS selon Le et al. (2016).
+    
+    :return: numpy array, concentration de POC (mg/m³)
+    """
+    log_poc = (-126.22 * rrs_488 - 120.74 * rrs_531 + 245.42 * rrs_547 
+                - 493.54 * rrs_667 + 489.3 * rrs_678 - 0.59)
+    return 10 ** log_poc
+
+def Le17_seawifs(rrs_490, rrs_510, rrs_555, rrs_670):
+    """
+    Calcule le POC à partir des réflectances Rrs pour SeaWiFS selon Le et al. (2016).
+    
+    :return: numpy array, concentration de POC (mg/m³)
+    """
+    log_poc = (-115.69 * rrs_490 - 53.64 * rrs_510 + 172.13 * rrs_555 
+                - 40.06 * rrs_670 - 0.54)
+    return 10 ** log_poc
 # def Manh23(Rrs490, Rrs510, Rrs555, Rrs665,**kwargs):
 #     if kwargs.get('sensor', None) != 'MERIS':
 #         raise ValueError("Manh23 algorithm is only available for MERIS sensor.")
