@@ -1,78 +1,146 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns  # Importer Seaborn
-from scipy.stats import norm  # Importer pour ajuster une distribution normale
+import seaborn as sns  # Import Seaborn
+from scipy.stats import norm  # Import to fit a normal distribution
 
 def plot_frequency_distribution(df, column_name):
     """
-    Génère un diagramme de fréquence de distribution pour une colonne donnée d'un DataFrame.
-    L'échelle des x est en log, et la médiane est indiquée sur le graphique.
-    Une courbe de densité est ajoutée pour vérifier la normalité.
-    Un deuxième axe x est ajouté pour la densité.
+    Generates a frequency distribution plot for a given column of a DataFrame.
+    The x-axis is in log scale, and the median is indicated on the plot.
+    A density curve is added to check normality.
+    A second x-axis is added for density.
 
     :param df: pandas DataFrame
-    :param column_name: Nom de la colonne pour laquelle générer le diagramme
+    :param column_name: Name of the column for which to generate the plot
     :return: matplotlib.figure.Figure
     """
     if column_name not in df.columns:
-        raise ValueError(f"La colonne '{column_name}' n'existe pas dans le DataFrame.")
+        raise ValueError(f"The column '{column_name}' does not exist in the DataFrame.")
     
-    # Extraire les données de la colonne et supprimer les valeurs manquantes
+    # Extract data from the column and drop missing values
     data = df[column_name].dropna()
 
-    # Calculer la médiane
+    # Calculate the median
     median_value = np.median(data)
 
-    # Calculer le nombre total de valeurs
+    # Calculate the total number of values
     total_values = len(data)
 
-    # Configurer le style de Seaborn
-    sns.set(style="whitegrid")
+    # Configure Seaborn style
+    sns.set_theme(style="whitegrid")
 
-    # Créer le diagramme de fréquence
+    # Create the frequency plot
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # Définir les bins en échelle logarithmique
+    # Define bins in logarithmic scale
     min_data = data.min()
     max_data = data.max()
-    padding_factor = 2  # Facteur pour ajouter du padding autour de la médiane
+    padding_factor = 2  # Factor to add padding around the median
     log_min = np.log10(median_value) - padding_factor
     log_max = np.log10(median_value) + padding_factor
-    bins = np.logspace(log_min, log_max, num=30)  # 30 bins en échelle log
+    bins = np.logspace(log_min, log_max, num=30)  # 30 bins in log scale
 
-    # Histogramme
-    ax1.hist(data, bins=bins, edgecolor='black', log=False, density=False, alpha=0.6, label='Histogramme')
+    # Histogram
+    ax1.hist(data, bins=bins, edgecolor='black', log=False, density=False, alpha=0.6, label='Histogram')
     ax1.set_xscale('log')
-    ax1.set_xlabel(column_name + ' (échelle log)')
-    ax1.set_ylabel('Fréquence', color='black')
+    ax1.set_xlabel('POC Concentration '+"$\mu$g.L$^{-1}$ " + ' (log scale)', color='black')
+    ax1.set_ylabel('Frequency', color='black')
     ax1.tick_params(axis='y', labelcolor='black')
 
-    # Ajouter une ligne verticale pour la médiane
-    ax1.axvline(median_value, color='red', linestyle='--', label=f'Médiane: {median_value:.2f}')
+    # Add a vertical line for the median
+    ax1.axvline(median_value, color='red', linestyle='--', label=f'Median: {median_value:.2f}')
     ax1.legend(loc='upper left')
 
-    # Ajouter un deuxième axe pour la densité
+    # Add a second axis for density
     ax2 = ax1.twinx()
     sns.kdeplot(data, ax=ax2, color='blue', label='KDE', linewidth=2)
-    # Ajuster une distribution normale sur les données en échelle logarithmique
+    # Fit a normal distribution to the data in logarithmic scale
     log_data = np.log10(data)
     mean, std = norm.fit(log_data)
     x = np.logspace(log_min, log_max, 1000)
     log_x = np.log10(x)
     pdf = norm.pdf(log_x, mean, std)
-    ax2.plot(x, pdf, color='green', linestyle='--', label=f'Normale ajustée\n(µ={mean:.2f}, σ={std:.2f})')
-    ax2.set_ylabel('Densité', color='blue')
+    ax2.plot(x, pdf, color='orange', linestyle='--', label=f'Fitted Normal\n(µ={mean:.2f}, σ={std:.2f})')
+    ax2.set_ylabel('Density', color='blue')
     ax2.tick_params(axis='y', labelcolor='blue')
     ax2.grid(False)
 
-    # Ajouter une légende pour le deuxième axe
+    # Add a legend for the second axis
     ax2.legend(loc='upper right')
 
-    # Ajouter des labels et un titre
-    plt.title(f'Diagramme de fréquence et densité de POC Concentration ($\mu$g.L$^{-1}$)\n'
-              f'Nombre total de valeurs: {total_values}, Bins: {len(bins)}')
+    # Add labels and a title
+    plt.title(f'Frequency and Density Plot of POC Concentration ($\mu$g.L$^{-1}$)\n'
+              f'Total number of values: {total_values}, Bins: {len(bins)}')
     fig.tight_layout()
 
-    # Retourner la figure
+    # Return the figure
+    return fig
+
+def plot_frequency_distribution_with_coloring(df, column_name, color_column_name):
+    """
+    Generates a frequency distribution plot with coloring based on another column.
+    The x-axis is in log scale, and the median is indicated on the plot.
+    A density curve is added to check normality.
+    A color bar is added to represent the mean of the coloring column per bin.
+
+    :param df: pandas DataFrame
+    :param column_name: Name of the column for which to generate the plot
+    :param color_column_name: Name of the column used for coloring
+    :return: matplotlib.figure.Figure
+    """
+    if column_name not in df.columns or color_column_name not in df.columns:
+        raise ValueError(f"The columns '{column_name}' or '{color_column_name}' do not exist in the DataFrame.")
+    
+    data = df[[column_name, color_column_name]].dropna()
+    median_value = np.median(data[column_name])
+    total_values = len(data[column_name])
+    
+    sns.set(style="whitegrid")
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    
+    min_data, max_data = data[column_name].min(), data[column_name].max()
+    padding_factor = 2  
+    log_min, log_max = np.log10(median_value) - padding_factor, np.log10(median_value) + padding_factor
+    bins = np.logspace(log_min, log_max, num=30)  
+    
+    bin_indices = np.digitize(data[column_name], bins)
+    bin_means = [data[color_column_name][bin_indices == i].mean() if not data[color_column_name][bin_indices == i].empty else 0 for i in range(1, len(bins))]
+    
+    color_norm = plt.Normalize(vmin=min(bin_means), vmax=max(bin_means))
+    colors = plt.cm.viridis(color_norm(bin_means))
+    
+    for i in range(len(bins) - 1):
+        bin_data = data[column_name][(data[column_name] >= bins[i]) & (data[column_name] < bins[i + 1])]
+        ax1.bar((bins[i] + bins[i + 1]) / 2, len(bin_data), width=(bins[i + 1] - bins[i]), color=colors[i], edgecolor='black', alpha=0.6)
+    
+    ax1.set_xscale('log')
+    ax1.set_xlabel('POC Concentration '+"$\mu$g.L$^{-1}$ " + ' (log scale)', color='black')
+    ax1.set_ylabel('Frequency', color='black')
+    ax1.axvline(median_value, color='red', linestyle='--', label=f'Median: {median_value:.2f}')
+    ax1.legend(loc='upper left')
+    
+    ax2 = ax1.twinx()
+    sns.kdeplot(data[column_name], ax=ax2, color='blue', label='KDE', linewidth=2)
+    log_data = np.log10(data[column_name])
+    mean, std = norm.fit(log_data)
+    x = np.logspace(log_min, log_max, 1000)
+    pdf = norm.pdf(np.log10(x), mean, std)
+    ax2.plot(x, pdf, color='orange', linestyle='--', label=f'Fitted Normal\n(µ={mean:.2f}, σ={std:.2f})')
+    ax2.set_ylabel('Density', color='blue')
+    ax2.tick_params(axis='y', labelcolor='blue')
+    ax2.grid(False)
+    # Add a legend for the second axis
+    ax2.legend(loc='upper right')
+
+    # Add a color bar
+    cax = fig.add_axes([0.9, 0.2, 0.03, 0.6])  # Position of the color bar
+    sm = plt.cm.ScalarMappable(cmap='viridis', norm=color_norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, cax=cax)
+    cbar.set_label(f'Mean of {color_column_name} per bin')
+    
+    fig.suptitle(f'Frequency and Density Plot of POC Concentration \nTotal number of values: {total_values}, Bins: {len(bins)}', y=0.95)
+    fig.tight_layout(rect=[0, 0, 0.9, 1])  # Adjust to avoid overlap
+    
     return fig

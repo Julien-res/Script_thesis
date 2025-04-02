@@ -195,7 +195,7 @@ def plot_results(Y, X, label, **kwargs):
 
     return ax
 
-def plot_results_Band_ratio(Y, X, label, **kwargs):
+def plot_results_Band_ratio(Y, X, **kwargs):
     sns.set_theme(style="ticks")
     created_ax = False
     ax = kwargs.get('ax', None)
@@ -214,26 +214,34 @@ def plot_results_Band_ratio(Y, X, label, **kwargs):
         if kwargs.get('outlier', None) is not None:
             X, Y = remove_outliers(X, Y, outl)
         plot_scatter(ax, X, Y)
-
-    if kwargs.get('logscale', True):
-        r2, rmsle, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=True)
-        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.92, f'RMSLE = {rmsle:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.89, f'SSPB = {sspb:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.86, f'MdSR = {mdsr:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.83, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.80, f'y = {10 ** intercept:.2f} * x^{slope:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.77, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+    if kwargs.get('matrix', False):
+        if kwargs.get('logscale', True):
+            r2, rmsle, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=True)
+            ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        else:
+            r2, rmsd, mapd, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=False)
+            ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
     else:
-        r2, rmsd, mapd, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=False)
-        ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.92, f'RMSD = {rmsd:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.89, f'MAPD = {mapd:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.86, f'SSPB = {sspb:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.83, f'MdSR = {mdsr:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.80, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.77, f'y = {slope:.2f}x + {intercept:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
-        ax.text(0.05, 0.74, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        if kwargs.get('logscale', True):
+            r2, rmsle, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=True)
+            ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.92, f'RMSLE = {rmsle:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.89, f'SSPB = {sspb:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.86, f'MdSR = {mdsr:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.83, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.80, f'y = {10 ** intercept:.2f} * x^{slope:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.77, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+        else:
+            r2, rmsd, mapd, sspb, mdsr, p_value, slope, intercept, num_points = plot_regression(ax, X, Y, logscale=False)
+            ax.text(0.05, 0.95, f'R² = {r2:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.92, f'RMSD = {rmsd:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.89, f'MAPD = {mapd:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.86, f'SSPB = {sspb:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.83, f'MdSR = {mdsr:.2f}%', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.80, f't-test p-value = {p_value:.2e}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.77, f'y = {slope:.2f}x + {intercept:.2f}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+            ax.text(0.05, 0.74, f'Number of points = {num_points}', transform=ax.transAxes, fontsize=12, verticalalignment='top')
+
 
     min_val_x = np.nanmin(X[np.isfinite(X)])
     max_val_x = np.nanmax(X[np.isfinite(X)])
@@ -259,14 +267,18 @@ def plot_results_Band_ratio(Y, X, label, **kwargs):
         ax.set_ylim([min_val_y - padding_y, max_val_y + padding_y])
 
 
-    if created_ax:
-        ax.set_ylabel('POC (microg/L)')
+    if kwargs.get('labelx', None) is not None:
+        ax.set_xlabel(kwargs['labelx'])
+    else:
         ax.set_xlabel('Band Ratio')
-        sensor = kwargs.get('sensor', None)
-        if sensor is not None:
-            ax.set_title(label + ' on ' + sensor)
-        else:
-            ax.set_title(label)
+    if kwargs.get('labely', None) is not None:
+        ax.set_ylabel(kwargs['labely'])
+    else:
+        ax.set_ylabel('POC (microg/L)')
+    sensor = kwargs.get('sensor', None)
+    if sensor is not None:
+        ax.set_title(kwargs.get('title', None))
+    ax.tick_params(axis='both', which='major', labelsize=10)
 
     ax.grid(True, which='both', linestyle='--', linewidth=0.3, color='gray', alpha=0.7)  # Adjusted linewidth
     sns.despine(ax=ax)

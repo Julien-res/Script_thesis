@@ -76,114 +76,97 @@ def process_data(data, mask, func):
     processed_data[valid_pixels] = func(masked_data[valid_pixels])
     
     return processed_data
+    # Sauvegarder les données en un fichier NetCDF
+    def save_to_netcdf(output_file, data, dates, transform, crs="EPSG:4326"):
+        """
+        Sauvegarde les données dans un fichier NetCDF avec une dimension temporelle.
 
-# Sauvegarder les données en GeoTIFF
-def save_to_tiff(output_file, data, transform, crs="EPSG:4326"):
-    with rasterio.open(
-        output_file,
-        'w',
-        driver='GTiff',
-        height=data.shape[0],
-        width=data.shape[1],
-        count=1,
-        dtype=data.dtype,
-        crs=crs,
-        transform=transform,
-        compress='LZW'  # Compression sans perte
-    ) as dst:
-        dst.write(data, 1)
+        :param output_file: str, chemin du fichier NetCDF de sortie
+        :param data: numpy array, données à sauvegarder (3D: temps, hauteur, largeur)
+        :param dates: list, liste des dates correspondant à chaque couche temporelle
+        :param transform: Affine, transformation géoréférencée
+        :param crs: str, système de coordonnées (par défaut EPSG:4326)
+        """
+        with Dataset(output_file, "w", format="NETCDF4") as nc:
+            # Dimensions
+            nc.createDimension("time", len(dates))
+            nc.createDimension("y", data.shape[1])
+            nc.createDimension("x", data.shape[2])
 
-# Rééchantillonner le masque d'eau à une résolution cible
-def resample_mask_to_target_resolution(mask, transform, target_transform, target_shape):
-    """
-    Rééchantillonne un masque à une résolution cible.
+            # Variables
+            times = nc.createVariable("time", "i4", ("time",))
+            latitudes = nc.createVariable("latitude", "f4", ("y", "x"))
+            longitudes = nc.createVariable("longitude", "f4", ("y", "x"))
+            spm = nc.createVariable("spm", "f4", ("time", "y", "x"), zlib=True, complevel=4)
 
-    :param mask: numpy array, masque d'eau (booléen)
-    :param transform: Affine, transformation géoréférencée du masque d'origine
-    :param target_transform: Affine, transformation géoréférencée cible
-    :param target_shape: tuple, dimensions (hauteur, largeur) de la résolution cible
-    :return: numpy array, masque rééchantillonné (booléen)
-    """
-    resampled_mask = np.empty(target_shape, dtype=np.uint8)
-    reproject(
-        source=mask.astype(np.uint8),
-        destination=resampled_mask,
-        src_transform=transform,
-        dst_transform=target_transform,
-        src_crs="EPSG:4326",  # Remplacez par le CRS réel si différent
-        dst_crs="EPSG:4326",  # Remplacez par le CRS réel si différent
-        resampling=Resampling.nearest  # Utilisation du rééchantillonnage nearest
-    )
-    
-    resampled_mask_binary = resampled_mask.astype(bool)
-    return resampled_mask_binary
+            # Attributs globaux
+            nc.title = "Concentration de SPM dérivée des données POLYMER"
+            nc.crs = crs
+            nc.transform = str(transform)
 
-# Exemple d'utilisation
-if __name__ == "__main__":
-    
-    polymer_dir = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_Polymer_20m"  # Dossier contenant les fichiers .nc de POLYMER
-    mask_dir = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/RAW"         # Dossier contenant les fichiers de masque d'eau
-    output_dir = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/SPM/SPM_Polymer_Han" # Dossier pour sauvegarder les résultats
-    # polymer_dir="/mnt/d/TEST/SPM_HAN/"
-    # mask_dir="/mnt/d/TEST/SPM_HAN/"
-    # output_dir="/mnt/d/TEST/SPM_HAN/Output"
-    # Créer le dossier de sortie s'il n'existe pas
-    os.makedirs(output_dir, exist_ok=True)
+            # Remplir les variables
+            times[:] = [int(date) for date in dates]
+            x_coords, y_coords = np.meshgrid(
+                np.arange(data.shape[2]), np.arange(data.shape[1])
+            )
+            longitudes[:, :] = transform * (x_coords, y_coords)[0]
+            latitudes[:, :] = transform * (x_coords, y_coords)[1]
+            spm[:, :, :] = data
 
-    # Récupérer tous les fichiers .nc dans le dossier POLYMER (y compris les sous-dossiers)
-    polymer_files = []
-    for root, _, files in os.walk(polymer_dir):
-        for polymer_file in files:
-            if polymer_file.endswith(".nc"):
-                polymer_files.append(os.path.join(root, polymer_file))
+    # Exemple d'utilisation
+    if __name__ == "__main__":
+        polymer_dir = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_Polymer_20m"
+        mask_dir = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/S2_PEPS_WiPE/RAW"
+        output_file = "/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/SPM/SPM_Polymer_Han/processed_spm.nc"
 
-    # Parcourir les fichiers avec une barre de progression
-    for polymer_path in tqdm(polymer_files, desc="Traitement des fichiers POLYMER"):
-        polymer_file = os.path.basename(polymer_path)
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-        # Extraire les patterns depuis le nom du fichier POLYMER
-        match = re.search(r"(\d{2}[A-Z]{3}).*(\d{8})", polymer_file)
-        if not match:
-            continue
+        polymer_files = []
+        for root, _, files in os.walk(polymer_dir):
+            for polymer_file in files:
+                if polymer_file.endswith(".nc"):
+                    polymer_files.append(os.path.join(root, polymer_file))
 
-        tile_id, date = match.groups()
+        all_processed_data = []
+        all_dates = []
 
-        # Chercher un fichier de masque correspondant (y compris dans les sous-dossiers)
-        mask_file = None
-        for mask_root, _, mask_files in os.walk(mask_dir):
-            for file in mask_files:
-                if tile_id in file and date in file and file.lower().endswith("_water.tif"):
-                    mask_file = os.path.join(mask_root, file)
-                    print(f"Match trouvé : {polymer_file} avec {file}")
+        for polymer_path in tqdm(polymer_files, desc="Traitement des fichiers POLYMER"):
+            polymer_file = os.path.basename(polymer_path)
+
+            match = re.search(r"(\d{2}[A-Z]{3}).*(\d{8})", polymer_file)
+            if not match:
+                continue
+
+            tile_id, date = match.groups()
+
+            mask_file = None
+            for mask_root, _, mask_files in os.walk(mask_dir):
+                for file in mask_files:
+                    if tile_id in file and date in file and file.lower().endswith("_water.tif"):
+                        mask_file = os.path.join(mask_root, file)
+                        break
+                if mask_file:
                     break
-            if mask_file:
-                break
 
-        if not mask_file:
-            continue
+            if not mask_file:
+                continue
 
-        # Définir le chemin de sortie
-        output_file = os.path.join(output_dir, f"processed_{tile_id}_{date}.tif")
-        # Vérifier si le fichier de sortie existe déjà
-        if os.path.exists(output_file):
-            print(f"Le fichier {output_file} existe déjà. Skipping...")
-            continue
-        # Charger les données
-        polymer_data = load_polymer_data(polymer_path)
-        water_mask, mask_transform = load_water_mask(mask_file)
-        water_mask=water_mask.astype(bool)
-        # Calculer la transformation cible et la forme cible
-        target_transform = from_origin(mask_transform.c, mask_transform.f, 20, 20)
-        target_shape = (polymer_data.shape[0], polymer_data.shape[1])
+            polymer_data = load_polymer_data(polymer_path)
+            water_mask, mask_transform = load_water_mask(mask_file)
+            water_mask = water_mask.astype(bool)
 
-        # Rééchantillonner le masque
-        water_mask_resampled = resample_mask_to_target_resolution(water_mask, mask_transform, target_transform, target_shape)
-        
-        # Traiter les données
-        processed_data = process_data(polymer_data, water_mask_resampled, calculate_spm)
+            target_transform = from_origin(mask_transform.c, mask_transform.f, 20, 20)
+            target_shape = (polymer_data.shape[0], polymer_data.shape[1])
 
-        # Sauvegarder le résultat
-        save_to_tiff(output_file, processed_data, target_transform)
+            water_mask_resampled = resample_mask_to_target_resolution(
+                water_mask, mask_transform, target_transform, target_shape
+            )
 
+            processed_data = process_data(polymer_data, water_mask_resampled, calculate_spm)
+
+            all_processed_data.append(processed_data)
+            all_dates.append(date)
+
+        all_processed_data = np.stack(all_processed_data)
+        save_to_netcdf(output_file, all_processed_data, all_dates, target_transform)
         print(f"Résultat sauvegardé dans {output_file}")
-

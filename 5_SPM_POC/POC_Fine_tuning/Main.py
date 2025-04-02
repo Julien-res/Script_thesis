@@ -22,13 +22,14 @@ data = load_data(file_path)
 datam = data.drop_duplicates(subset=['ID'], keep='first')
 
 datar = datam[datam['BOOL_RRS_ALL'] == 1]
+
 dataMU = datam[datam['BOOL_RRS_ALL'] == 0]
 rrs_columns = [col for col in datar.columns if col.startswith("Rrs")]
 
 # Rename Rrs columns to only include the wavelength number
 renamed_columns = {col: col[3:] for col in rrs_columns}
 datar.rename(columns=renamed_columns, inplace=True)
-
+datar2=datar.copy()
 # Clip values to be within the range [0, 0.08] without removing rows
 datar[list(renamed_columns.values())] = datar[list(renamed_columns.values())].clip(lower=0, upper=0.08)
 
@@ -54,37 +55,61 @@ band_class = {band: simulate_band(datar, srf_data[band]['Values'],
 Rrs_class = np.array(list(band_class.values())).T
 classif = Chl_CONNECT(Rrs_class, method='logreg', sensor='MSI', logRrsClassif=False, pTransform=False).Class
 datar['Class'] = classif
+datarLOWPOC = datar[datar['POC_µg_L'] < 1000]
+datarHIGHPOC = datar[datar['POC_µg_L'] >= 1000]
+datarTran= datar[datar['POC_µg_L'] > 100]
 #%% ======================== Map data ========================
 from map_poc import plot_world_map
 for i in [None, 'europe', 'usa', 'guyane', 'mekongA', 'mekongB']:
     fig, ax = plot_world_map(datar, 'Lat', 'Lon', 'POC_µg_L', 'POC with in-situ Rrs', region=i)
-    output_path = os.path.join(path, 'output', f'POC_with_in_situ_Rrs_{i if i else "global"}.png')
+    output_path = os.path.join(path, 'output','Map','W_Rrs', f'POC_WRrs_{i if i else "global"}.png')
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
     fig, ax = plot_world_map(dataMU, 'Lat', 'Lon', 'POC_µg_L', 'POC without in-situ Rrs', region=i)
-    output_path = os.path.join(path, 'output', f'POC_without_in_situ_Rrs_{i if i else "global"}.png')
+    output_path = os.path.join(path, 'output','Map','Wo_Rrs', f'POC_WoRrs_{i if i else "global"}.png')
     fig.savefig(output_path, dpi=300)
     plt.close(fig)
 
 #%% ======================== Spectral shape and data cleaning ========================
 from spectral_shape import plot_rrs_spectra_interactive,plot_rrs_spectra,plot_rrs_spectra_class
 fig = plot_rrs_spectra(datar, 'POC_µg_L')
-output_path = os.path.join(path, 'output', 'POC_rrs_spectra.png')
+output_path = os.path.join(path, 'output','Spectra', 'POC_rrs_spectra.png')
 fig.savefig(output_path, dpi=300)
 plt.close(fig)
 
 fig = plot_rrs_spectra_class(datar, 'Class')
-output_path = os.path.join(path, 'output', 'Class_rrs_spectra.png')
+output_path = os.path.join(path, 'output','Spectra', 'Class_rrs_spectra.png')
+fig.savefig(output_path, dpi=300)
+plt.close(fig)
+fig = plot_rrs_spectra(datarLOWPOC, 'POC_µg_L')
+output_path = os.path.join(path, 'output','Spectra', 'POC_rrs_spectra_LOW_POC.png')
+fig.savefig(output_path, dpi=300)
+plt.close(fig)
+fig = plot_rrs_spectra(datarHIGHPOC, 'POC_µg_L')
+output_path = os.path.join(path, 'output','Spectra', 'POC_rrs_spectra_HIGHPOC.png')
+fig.savefig(output_path, dpi=300)
+plt.close(fig)
+fig = plot_rrs_spectra(datarTran, 'POC_µg_L')
+output_path = os.path.join(path, 'output','Spectra', 'POC_rrs_spectra_Wo100POC.png')
 fig.savefig(output_path, dpi=300)
 plt.close(fig)
 # plot_rrs_spectra_interactive(datar, 'POC_µg_L')
 #%% ======================== Frequency plot ========================
-from frequency_plot import plot_frequency_distribution
+from frequency_plot import plot_frequency_distribution_with_coloring, plot_frequency_distribution
+fig = plot_frequency_distribution_with_coloring(datar, 'POC_µg_L', 'Class')
+output_path = os.path.join(path, 'output', 'POC_frequency_distribution_colored.png')
+fig.savefig(output_path, dpi=300)
+plt.close(fig)
 fig = plot_frequency_distribution(datar, 'POC_µg_L')
 output_path = os.path.join(path, 'output', 'POC_frequency_distribution.png')
 fig.savefig(output_path, dpi=300)
 plt.close(fig)
+fig = plot_frequency_distribution_with_coloring(datarTran, 'POC_µg_L', 'Class')
+output_path = os.path.join(path, 'output', 'POC_frequency_distribution_colored_Tran.png')
+fig.savefig(output_path, dpi=300)
+plt.close(fig)
+
 #%% ======================== Hyperspectral matrix correlation ========================
 from hyperspec_matrix import compute_and_plot_correlation_matrix
 band_limits = {band: (int(srf_data[band]['Wavelengths'][0]), 
@@ -97,25 +122,24 @@ plt.close(fig)
 
 #%% ======================== Algo fine tuning ========================
 from plot_correl import plot_results_Band_ratio
-
-dic={'B4':'B2','B5':'B2','B6':'B2','B1':'B5','B2':'B5','B3':'B5'}
-for i in dic.keys():
-    print(i,dic[i])
-    X=simulate_band(datar, 
-                    srf_data[i]['Values'],
-                    int(srf_data[i]['Wavelengths'][0]),
-                    int(srf_data[i]['Wavelengths'].values[-1]))
-    Y=simulate_band(datar, 
-                    srf_data[dic[i]]['Values'],
-                    int(srf_data[dic[i]]['Wavelengths'][0]),
-                    int(srf_data[dic[i]]['Wavelengths'].values[-1]))
-    # plot_log_log_regression(X/Y,datar['POC_µg_L'],xlabel=f'Rrs({i})/Rrs({dic[i]})', ylabel='POC Concentration', title=f'Log-Log Regression for {i} and {dic[i]}')
-    
-    fig,ax = plt.subplots(figsize=(6, 6))
-    ax = plot_results_Band_ratio(datar['POC_µg_L'], X/Y, classif=datar['Class'], sensor='MSI', label=f'Rrs({i})/Rrs({dic[i]})',ax=ax)
-    output_path = os.path.join(path, 'output', f'Band_ratio_{i}_to_{dic[i]}.png')
-    fig.savefig(output_path, dpi=300)
-    plt.close(fig)
+for i in  ['B4','B5','B6']:
+    for j in ['B1','B2','B3']:
+        print(i,j)
+        X=simulate_band(datar, 
+                        srf_data[i]['Values'],
+                        int(srf_data[i]['Wavelengths'][0]),
+                        int(srf_data[i]['Wavelengths'].values[-1]))
+        Y=simulate_band(datar, 
+                        srf_data[j]['Values'],
+                        int(srf_data[j]['Wavelengths'][0]),
+                        int(srf_data[j]['Wavelengths'].values[-1]))
+        # plot_log_log_regression(X/Y,datar['POC_µg_L'],xlabel=f'Rrs({i})/Rrs({dic[i]})', ylabel='POC Concentration', title=f'Log-Log Regression for {i} and {dic[i]}')
+        
+        fig,ax = plt.subplots(figsize=(6, 6))
+        ax = plot_results_Band_ratio(datar['POC_µg_L'], X/Y, classif=datar['Class'], sensor='MSI', label=f'Rrs({i})/Rrs({j})',ax=ax,labelx=f'Rrs({i})/Rrs({j})',labely='POC In-situ Concentration',title=f'Log-Log Regression for {i} and {j}')
+        output_path = os.path.join(path, 'output','Band_ratio', f'Band_ratio_{i}_on_{j}.png')
+        fig.savefig(output_path, dpi=300)
+        plt.close(fig)
 
 
 #%% =====================================================================

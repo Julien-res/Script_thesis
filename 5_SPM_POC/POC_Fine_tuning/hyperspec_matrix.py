@@ -69,7 +69,9 @@ def compute_and_plot_correlation_matrix(data, band_limits, poc_column='POC'):
     # Ajouter du padding pour éloigner les labels des ticks des axes
     plt.gca().tick_params(axis='x', pad=10)  # Padding pour l'axe X
     plt.gca().tick_params(axis='y', pad=10)  # Padding pour l'axe Y
-
+    # Supprimer les sous-ticks
+    plt.gca().tick_params(axis='x', which='minor', bottom=False)
+    plt.gca().tick_params(axis='y', which='minor', left=False)
     # Ajouter les aires grises pour les bandes (seulement sur la moitié supérieure de la matrice)
     for band_name_x, (start_x, end_x) in band_limits.items():
         start_idx_x = next((i for i, col in enumerate(rrs_columns) if int(col) >= start_x), None)
