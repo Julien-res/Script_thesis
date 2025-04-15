@@ -5,7 +5,7 @@ import numpy as np
 
 def load_data(file_path):
     try:
-        data = pd.read_csv(file_path)
+        data = pd.read_csv(file_path,low_memory=False)
         return data
     except Exception as e:
         print(f"An error occurred while loading the data: {e}")
@@ -43,4 +43,5 @@ def simulate_band(data, srf_band, start, end):
     weighted_sum = np.zeros(data_band.shape[0])
     for i in range(data_band.shape[1]):
         weighted_sum += data_band.iloc[:, i] * srf_band[i]
-    return weighted_sum / np.sum(srf_band)
+    indices_used = data_band.index.tolist()
+    return weighted_sum / np.sum(srf_band), list(indices_used)

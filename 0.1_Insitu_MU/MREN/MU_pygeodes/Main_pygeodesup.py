@@ -18,8 +18,8 @@ from datetime import datetime
 import pytz
 import mgrs
 CONFIG="/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/MU_pygeodes/conf.json"
-LOCAL="/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/Output/"
-DATA = "/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/MU_pygeodes/DATA_POC_PON_SPM_light.csv"
+LOCAL="/work/users/cverpoorter/VolTransMESKONG/Data/S2_PEPS/Match_up/1_RAW/"
+DATA = "/work/users/cverpoorter/VolTransMESKONG/Code/Code_S2_PEPS/Match_up/MU_pygeodes/DATA_POC_ONLY.csv"
 from pygeodes import Geodes, Config
 conf = Config.from_file(CONFIG)
 geodes = Geodes(conf)
@@ -27,6 +27,7 @@ from pygeodes.utils.datetime_utils import complete_datetime_from_str
 from pygeodes.utils.profile import DownloadQueue, Profile
 import time
 from collections import deque
+os.chdir(LOCAL)
 # DATA="/mnt/c/Users/Julien/Downloads/DATA_POC_PON_SPM.csv"
 Dat = pd.read_csv(DATA)
 #Setting download location #################################################
@@ -61,7 +62,13 @@ request_times = deque()  # To store the timestamps of the last 50 requests
 quota_limit = 50  # Maximum number of requests allowed per hour
 time_window = 3600  # Time window in seconds (1 hour)
 
+# Demander à l'utilisateur combien de requêtes ont déjà été effectuées
+used_requests = int(input("Combien de requêtes ont déjà été effectuées dans l'heure actuelle ? "))
+request_times = deque([time.time() - (3600 - i * (3600 / 50)) for i in range(used_requests)])
+
+# Reste du code
 for p in range(0, len(Dat) - 1, 1):
+    time.sleep(1)  # Add a delay of one second between each request
     X = df.loc[p, 'Lon']
     Y = df.loc[p, 'Lat']
     Tile = latlon_to_s2_tile(Y, X)
@@ -71,7 +78,7 @@ for p in range(0, len(Dat) - 1, 1):
     ends = str(ends.strftime('%Y-%m-%dT%H:%M'))
     query = {
         "product:type": {"eq": "S2MSI1C"},
-        "spaceborne:tile": {"eq": Tile},
+        "grid:code": {"eq": Tile},
         "start_datetime": {"lte": complete_datetime_from_str(ends)},
         "end_datetime": {"gte": complete_datetime_from_str(starts)},
     }
